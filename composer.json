@@ -1,0 +1,30 @@
+{
+  "name": "wpsmith/rewrite",
+  "description": "WordPress rewrite.",
+  "keywords": [
+    "wordpress",
+    "rewrite",
+    "login"
+  ],
+  "homepage": "https://github.com/wpsmith/Rewrite",
+  "license": "GPL-2.0+",
+  "authors": [
+    {
+      "name": "Travis Smith",
+      "email": "t@wpsmith.net",
+      "homepage": "http://wpsmith.net/",
+      "role": "Developer"
+    }
+  ],
+  "support": {
+    "issues": "https://github.com/wpsmith/Rewrite/issues"
+  },
+  "require": {
+    "php": ">=5.2.4"
+  },
+  "autoload": {
+    "psr-4": {
+      "WPS\\Core\\": "src/"
+    }
+  }
+}
