@@ -8,7 +8,7 @@
  * Any modifications to or software including (via compiler) GPL-licensed code must also be made
  * available under the GPL along with build & install instructions.
  *
- * @package    WPS\Core
+ * @package    WPS\Rewrite
  * @author     Travis Smith <t@wpsmith.net>
  * @copyright  2015-2018 Travis Smith
  * @license    http://opensource.org/licenses/gpl-2.0.php GNU Public License v2
@@ -17,7 +17,7 @@
  * @since      0.1.0
  */
 
-namespace WPS\Core;
+namespace WPS\Rewrite;
 
 // Exit if accessed directly.
 if ( ! defined( 'ABSPATH' ) ) {
@@ -28,7 +28,7 @@ if ( ! class_exists( 'Rewrite_Endpoint' ) ) {
 	/**
 	 * Class Rewrite_Endpoint
 	 *
-	 * @package WPS\Core
+	 * @package WPS\Rewrite
 	 */
 	class Rewrite_Endpoint {
 
