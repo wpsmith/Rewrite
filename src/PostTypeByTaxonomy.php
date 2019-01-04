@@ -334,8 +334,11 @@ if ( ! class_exists( 'WPS\Plugins\Rewrite\PostTypeTaxonomy' ) ) {
 			$rules = [];
 			foreach ( $this->get_terms() as $term ) {
 
+				// Create path based on order.
+				// {prefix}/{term}/{custom-post-type} or {prefix}/{custom-post-type}/{term}
 				$path = str_replace( '%post_type%', $post_type_slug, str_replace( '%term%', $term->slug, $this->prefix . implode( '/', $this->order ) ) );
 
+				// Archive URLs.
 				if ( $post_type_object->has_archive ) {
 
 					// {prefix}/{term}/{custom-post-type} Archive URL.
@@ -351,68 +354,43 @@ if ( ! class_exists( 'WPS\Plugins\Rewrite\PostTypeTaxonomy' ) ) {
 							'paged'         => '$matches[1]',
 						) );
 
-//					// {prefix}/{term}/ Archive URLs.
+					// {prefix}/{term}/ Archive URLs.
 					$rules[ $this->prefix . $term->slug . '/?$' ] = 'index.php?' . build_query( array(
-							'wps-taxonomy'   => $this->taxonomy,
-							'wps-term'       => $term->slug,
-							$this->taxonomy  => $term->slug, // throws an error
-							'post_type'      => $this->post_type,
+							'wps-taxonomy'  => $this->taxonomy,
+							'wps-term'      => $term->slug,
+							$this->taxonomy => $term->slug, // throws an error
 						) );
 
 					// {prefix}/{term}/page/#/ Archive URLs.
-					$rules[ $this->prefix . $term->slug . '/(.?.+?)(?:/([0-9]+))?/?$' ] = 'index.php?' . build_query( array(
-							'wps-taxonomy'   => $this->taxonomy,
-							'wps-term'       => $term->slug,
-							$this->taxonomy  => $term->slug, // throws an error
-							'post_type'      => $this->post_type,
-							'page'           => '$matches[2]',
+					$rules[ $this->prefix . $term->slug . '/page/?([0-9]{1,})/?$' ] = 'index.php?' . build_query( array(
+							'wps-taxonomy'  => $this->taxonomy,
+							'wps-term'      => $term->slug,
+							$this->taxonomy => $term->slug, // throws an error
+							'paged'          => '$matches[1]',
 						) );
 
 				}
 
+				// Singular URLs.
 				if ( $post_type_object->public ) {
 
-					// {prefix}/{taxonomy}/{custom-post-type}/{postname} URLs.
-//					$rules[ $this->prefix . $term->slug . '/' . $post_type_slug . '/(.?.+?)/?$' ] = 'index.php?' . build_query( array(
-//							$this->taxonomy  => $term->slug,
-//							'post_type'      => $this->post_type,
-//							$this->post_type => '$matches[1]',
-//						) );
-
 					// {prefix}/{term}/{custom-post-type}/{postname} URLs.
-					$rules[ $path . '/([^/]+)(?:/([0-9]+))?/?$' ] = 'index.php?' . build_query( array(
+					$rules[ $path . '([^/]+)?(.?.+?)(?:/([0-9]+))?/?$' ] = 'index.php?' . build_query( array(
 							'wps-taxonomy'   => $this->taxonomy,
 							'wps-term'       => $term->slug,
 //							$this->taxonomy  => $term->slug, // throws an error
 							'post_type'      => $this->post_type,
-							$this->post_type => '$matches[1]',
-							'page'           => '$matches[2]',
-						) );
-
-					// {prefix}/{taxonomy}/{postname} URLs.
-//					$rules[ $this->prefix . $term->slug . '/(.?.+?)/?$' ] = 'index.php?' . build_query( array(
-//							$this->taxonomy  => $term->slug,
-//							'post_type'      => $this->post_type,
-//							$this->post_type => '$matches[1]',
-//						) );
-
-					// {prefix}/{term}/{postname} URLs.
-					$rules[ $this->prefix . $term->slug . '/([^/]+)(?:/([0-9]+))?/?$' ] = 'index.php?' . build_query( array(
-							'wps-taxonomy'   => $this->taxonomy,
-							'wps-term'       => $term->slug,
-//							$this->taxonomy  => $term->slug, // throws an error
-							'post_type'      => $this->post_type,
-							$this->post_type => '$matches[1]',
+							$this->post_type => '$matches[2]',
 							'page'           => '$matches[2]',
 						) );
 
 					// {prefix}/{term}/{postname} URLs.
-					$rules[ $this->prefix . $term->slug . '/([^/]+)(?:/([0-9]+))?/?$' ] = 'index.php?' . build_query( array(
+					$rules[ $this->prefix . $term->slug . '([^/]+)?(.?.+?)(?:/([0-9]+))?/?$' ] = 'index.php?' . build_query( array(
 							'wps-taxonomy'   => $this->taxonomy,
 							'wps-term'       => $term->slug,
 //							$this->taxonomy  => $term->slug, // throws an error
 							'post_type'      => $this->post_type,
-							$this->post_type => '$matches[1]',
+							$this->post_type => '$matches[2]',
 							'page'           => '$matches[2]',
 						) );
 
