@@ -356,9 +356,7 @@ if ( ! class_exists( 'WPS\Plugins\Rewrite\PostTypeTaxonomy' ) ) {
 							'wps-taxonomy'   => $this->taxonomy,
 							'wps-term'       => $term->slug,
 							$this->taxonomy  => $term->slug, // throws an error
-//							'post_type'      => $this->post_type,
-//							$this->post_type => '$matches[1]',
-//							'page'           => '$matches[2]',
+							'post_type'      => $this->post_type,
 						) );
 
 					// {prefix}/{term}/page/#/ Archive URLs.
@@ -366,9 +364,8 @@ if ( ! class_exists( 'WPS\Plugins\Rewrite\PostTypeTaxonomy' ) ) {
 							'wps-taxonomy'   => $this->taxonomy,
 							'wps-term'       => $term->slug,
 							$this->taxonomy  => $term->slug, // throws an error
-//							'post_type'      => $this->post_type,
-//							$this->post_type => '$matches[1]',
-//							'page'           => '$matches[2]',
+							'post_type'      => $this->post_type,
+							'page'           => '$matches[2]',
 						) );
 
 				}
