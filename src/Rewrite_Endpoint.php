@@ -28,42 +28,10 @@ if ( ! class_exists( 'Rewrite_Endpoint' ) ) {
 	/**
 	 * Class Rewrite_Endpoint
 	 *
+	 * @deprecated
 	 * @package WPS\Rewrite
 	 */
 	class Rewrite_Endpoint {
-
-		/**
-		 * Endpoint mask describing the places the endpoint should be added.
-		 *
-		 * @var int
-		 */
-		public $places;
-
-		/**
-		 * Template
-		 *
-		 * @var string
-		 */
-		public $template;
-
-		/**
-		 * @var string
-		 */
-		public $var;
-
-		/**
-		 * Post Type
-		 *
-		 * @var string
-		 */
-		public $post_type;
-
-		/**
-		 * Post meta field.
-		 *
-		 * @var string
-		 */
-		public $post_meta;
 
 		/**
 		 * Rewrite_Endpoint constructor.
