@@ -144,9 +144,6 @@ if ( ! class_exists( 'WPS\Plugins\Rewrite\PostTypeTaxonomy' ) ) {
 		 * @return bool
 		 */
 		public function wp_unique_post_slug_is_bad_slug( $needs_suffix, $slug, $post_type, $post_parent = null ) {
-			if ( $this->post_type !== $post_type ) {
-				return $needs_suffix;
-			}
 
 			// Now cycle through our terms.
 			$terms = $this->get_terms();
@@ -157,6 +154,7 @@ if ( ! class_exists( 'WPS\Plugins\Rewrite\PostTypeTaxonomy' ) ) {
 			}
 
 			return $needs_suffix;
+
 		}
 
 		/**
@@ -340,17 +338,37 @@ if ( ! class_exists( 'WPS\Plugins\Rewrite\PostTypeTaxonomy' ) ) {
 
 				if ( $post_type_object->has_archive ) {
 
-					// {prefix}/{taxonomy}/{custom-post-type} Archive URL.
+					// {prefix}/{term}/{custom-post-type} Archive URL.
 					$rules[ $path . '/?$' ] = 'index.php?' . build_query( array(
 							$this->taxonomy => $term->slug,
 							'post_type'     => $this->post_type,
 						) );
 
-					// Pagination. {prefix}/{taxonomy}/{custom-post-type} Archive URLs.
+					// Pagination. {prefix}/{term}/{custom-post-type} Archive URLs.
 					$rules[ $path . '/page/?([0-9]{1,})/?$' ] = 'index.php?' . build_query( array(
 							$this->taxonomy => $term->slug,
 							'post_type'     => $this->post_type,
 							'paged'         => '$matches[1]',
+						) );
+
+//					// {prefix}/{term}/ Archive URLs.
+					$rules[ $this->prefix . $term->slug . '/?$' ] = 'index.php?' . build_query( array(
+							'wps-taxonomy'   => $this->taxonomy,
+							'wps-term'       => $term->slug,
+							$this->taxonomy  => $term->slug, // throws an error
+//							'post_type'      => $this->post_type,
+//							$this->post_type => '$matches[1]',
+//							'page'           => '$matches[2]',
+						) );
+
+					// {prefix}/{term}/page/#/ Archive URLs.
+					$rules[ $this->prefix . $term->slug . '/(.?.+?)(?:/([0-9]+))?/?$' ] = 'index.php?' . build_query( array(
+							'wps-taxonomy'   => $this->taxonomy,
+							'wps-term'       => $term->slug,
+							$this->taxonomy  => $term->slug, // throws an error
+//							'post_type'      => $this->post_type,
+//							$this->post_type => '$matches[1]',
+//							'page'           => '$matches[2]',
 						) );
 
 				}
@@ -364,7 +382,7 @@ if ( ! class_exists( 'WPS\Plugins\Rewrite\PostTypeTaxonomy' ) ) {
 //							$this->post_type => '$matches[1]',
 //						) );
 
-					// {prefix}/{taxonomy}/{custom-post-type}/{postname} URLs.
+					// {prefix}/{term}/{custom-post-type}/{postname} URLs.
 					$rules[ $path . '/([^/]+)(?:/([0-9]+))?/?$' ] = 'index.php?' . build_query( array(
 							'wps-taxonomy'   => $this->taxonomy,
 							'wps-term'       => $term->slug,
@@ -381,7 +399,17 @@ if ( ! class_exists( 'WPS\Plugins\Rewrite\PostTypeTaxonomy' ) ) {
 //							$this->post_type => '$matches[1]',
 //						) );
 
-					// {prefix}/{taxonomy}/{postname} URLs.
+					// {prefix}/{term}/{postname} URLs.
+					$rules[ $this->prefix . $term->slug . '/([^/]+)(?:/([0-9]+))?/?$' ] = 'index.php?' . build_query( array(
+							'wps-taxonomy'   => $this->taxonomy,
+							'wps-term'       => $term->slug,
+//							$this->taxonomy  => $term->slug, // throws an error
+							'post_type'      => $this->post_type,
+							$this->post_type => '$matches[1]',
+							'page'           => '$matches[2]',
+						) );
+
+					// {prefix}/{term}/{postname} URLs.
 					$rules[ $this->prefix . $term->slug . '/([^/]+)(?:/([0-9]+))?/?$' ] = 'index.php?' . build_query( array(
 							'wps-taxonomy'   => $this->taxonomy,
 							'wps-term'       => $term->slug,
