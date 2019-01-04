@@ -3,8 +3,7 @@
   "description": "WordPress rewrite.",
   "keywords": [
     "wordpress",
-    "rewrite",
-    "login"
+    "rewrite"
   ],
   "homepage": "https://github.com/wpsmith/Rewrite",
   "license": "GPL-2.0+",
