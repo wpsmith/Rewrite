@@ -94,14 +94,14 @@ if ( ! class_exists( 'WPS\Plugins\Rewrite\PostTypeTaxonomy' ) ) {
 		/**
 		 * Filters the permalink for a post of a custom post type.
 		 *
-		 * @param string  $post_link The post's permalink.
-		 * @param \WP_Post $post      The post in question.
-		 * @param bool    $leavename Whether to keep the post name.
-		 * @param bool    $sample    Is it a sample permalink.
+		 * @param string $post_link The post's permalink.
+		 * @param \WP_Post $post The post in question.
+		 * @param bool $leavename Whether to keep the post name.
+		 * @param bool $sample Is it a sample permalink.
 		 *
 		 * @return string Post's permalink.
 		 */
-		public function post_type_link($post_link, $post, $leavename, $sample) {
+		public function post_type_link( $post_link, $post, $leavename, $sample ) {
 			if ( $this->post_type !== $post->post_type ) {
 				return $post_link;
 			}
@@ -110,7 +110,7 @@ if ( ! class_exists( 'WPS\Plugins\Rewrite\PostTypeTaxonomy' ) ) {
 			// get the primary term.
 			$terms = get_the_terms( $post, $this->taxonomy );
 
-			if ( !empty($terms ) ) {
+			if ( ! empty( $terms ) ) {
 				return home_url( trailingslashit( $terms[0]->slug ) . $uri );
 			}
 

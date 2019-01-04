@@ -224,6 +224,7 @@ if ( ! class_exists( 'WPS\Rewrite\RewriteEndpoint' ) ) {
 		 * Conditionally includes the template.
 		 *
 		 * @global \WP_Filesystem_Base $wp_filesystem Subclass
+		 *
 		 * @param string $template Template path.
 		 *
 		 * @return mixed|null|string
