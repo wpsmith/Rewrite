@@ -67,11 +67,6 @@ if ( ! class_exists( 'WPS\Plugins\Rewrite\PostTypeTaxonomy' ) ) {
 			$this->post_type = $args['post_type'];
 			$this->taxonomy  = $args['taxonomy'];
 
-			// Make sure we check the slugs.
-			add_filter( 'wp_unique_post_slug_is_bad_attachment_slug', array( $this, 'wp_unique_post_slug_is_bad_attachment_slug' ), 10, 2 );
-			add_filter( 'wp_unique_post_slug_is_bad_hierarchical_slug', array( $this, 'wp_unique_post_slug_is_bad_hierarchical_slug' ), 10, 4 );
-			add_filter( 'wp_unique_post_slug_is_bad_flat_slug', array( $this, 'wp_unique_post_slug_is_bad_flat_slug' ), 10, 3 );
-
 			// @todo Determine whether this is really needed. Could be needed because this taxonomy term could be part of another rewrite deal.
 			add_filter( 'wp_unique_term_slug_is_bad_slug', array( $this, 'wp_unique_term_slug_is_bad_slug' ), 10, 3 );
 
@@ -188,7 +183,7 @@ if ( ! class_exists( 'WPS\Plugins\Rewrite\PostTypeTaxonomy' ) ) {
 				}
 			}
 
-			return $needs_suffix;
+			return parent::wp_unique_post_slug_is_bad_slug( $needs_suffix, $slug, $post_type, $post_parent );
 
 		}
 
@@ -217,51 +212,6 @@ if ( ! class_exists( 'WPS\Plugins\Rewrite\PostTypeTaxonomy' ) ) {
 
 			return $this->wp_unique_post_slug_is_bad_slug( $needs_suffix, $slug );
 
-		}
-
-		/**
-		 * Determines whether the post slug is unique.
-		 *
-		 * @access private
-		 *
-		 * @param bool $needs_suffix Whether the slug needs a suffix added.
-		 * @param string $slug The slug being checked.
-		 * @param string $post_type The post type.
-		 *
-		 * @return bool
-		 */
-		public function wp_unique_post_slug_is_bad_flat_slug( $needs_suffix, $slug, $post_type ) {
-			return $this->wp_unique_post_slug_is_bad_slug( $needs_suffix, $slug, $post_type );
-		}
-
-		/**
-		 * Determines whether the post slug is unique.
-		 *
-		 * @access private
-		 *
-		 * @param bool $needs_suffix Whether the slug needs a suffix added.
-		 * @param string $slug The slug being checked.
-		 * @param string $post_type The post type.
-		 * @param int|null $post_parent Post Parent ID.
-		 *
-		 * @return bool
-		 */
-		public function wp_unique_post_slug_is_bad_hierarchical_slug( $needs_suffix, $slug, $post_type, $post_parent ) {
-			return $this->wp_unique_post_slug_is_bad_slug( $needs_suffix, $slug, $post_type, $post_parent );
-		}
-
-		/**
-		 * Determines whether the post slug is unique.
-		 *
-		 * @access private
-		 *
-		 * @param bool $needs_suffix Whether the slug needs a suffix added.
-		 * @param string $slug The slug being checked.
-		 *
-		 * @return bool
-		 */
-		public function wp_unique_post_slug_is_bad_attachment_slug( $needs_suffix, $slug ) {
-			return $this->wp_unique_post_slug_is_bad_slug( $needs_suffix, $slug, 'attachment' );
 		}
 
 		/**
