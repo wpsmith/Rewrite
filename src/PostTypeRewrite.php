@@ -75,6 +75,9 @@ if ( ! class_exists( 'WPS\Rewrite\PostTypeRewrite' ) ) {
 			}
 			$this->post_type = $args['post_type'];
 
+			// Permalink preview.
+			add_filter( 'post_type_link', array( $this, 'post_type_link' ), 10, 2 );
+
 			// Construct.
 			parent::__construct( $this->var, $args );
 
@@ -162,6 +165,27 @@ if ( ! class_exists( 'WPS\Rewrite\PostTypeRewrite' ) ) {
 		}
 
 		/** PRIVATE */
+
+		/**
+		 * Filters the permalink for a post of a custom post type.
+		 *
+		 * @access private
+		 *
+		 * @param string $post_link The post's permalink.
+		 * @param \WP_Post $post The post in question.
+		 *
+		 * @return string Post's permalink.
+		 */
+		public function post_type_link( $post_link, $post ) {
+
+			if ( $this->post_type !== $post->post_type ) {
+				return $post_link;
+			}
+
+			// Add the prefix after home URL base.
+			return home_url( $this->prefix . str_replace( trailingslashit( home_url() ), '', $post_link ) );
+
+		}
 
 		/**
 		 * Gets the Custom Post Type rewrite rules.
@@ -376,6 +400,28 @@ if ( ! class_exists( 'WPS\Rewrite\PostTypeRewrite' ) ) {
 				$post_type_archive_slug = isset( $post_type_object->has_archive ) && is_string( $post_type_object->has_archive ) && '' !== $post_type_object->has_archive ? $post_type_object->has_archive : $post_type_slug;
 
 				$rules = $this->get_cpt_rewrite_rules( $this->prefix . $post_type_archive_slug );
+			}
+
+			// Singular URLs.
+			if ( $post_type_object->public ) {
+
+				// {path}/embed/ Embed URLs.
+				if ( $this->rewrites['embed'] ) {
+					$rules[ $this->prefix . $post_type_slug . '([^/]+)?(.?.+?)/embed/?$' ] = 'index.php?' . build_query( array(
+							'post_type'      => $this->post_type,
+							$this->post_type => '$matches[2]',
+							'page'           => '$matches[2]',
+							'embed'          => 'true',
+						) );
+				}
+
+				// {prefix}/{custom-post-type}/{postname} URLs.
+				$rules[ $this->prefix . $post_type_slug . '([^/]+)?(.?.+?)(?:/([0-9]+))?/?$' ] = 'index.php?' . build_query( array(
+						'post_type'      => $this->post_type,
+						$this->post_type => '$matches[2]',
+						'page'           => '$matches[2]',
+					) );
+
 			}
 
 			// Add rules to top; first match wins!
