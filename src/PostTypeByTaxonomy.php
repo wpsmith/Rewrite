@@ -80,9 +80,6 @@ if ( ! class_exists( 'WPS\Plugins\Rewrite\PostTypeTaxonomy' ) ) {
 			add_filter( "edited_$this->taxonomy", 'flush_rewrite_rules' );
 			add_filter( "deleted_$this->taxonomy", 'flush_rewrite_rules' );
 
-			// Permalink preview.
-			add_filter( 'post_type_link', array( $this, 'post_type_link' ), 10, 2 );
-
 			// Construct.
 			parent::__construct( $this->var, $args );
 
@@ -137,15 +134,33 @@ if ( ! class_exists( 'WPS\Plugins\Rewrite\PostTypeTaxonomy' ) ) {
 				return $post_link;
 			}
 
+			$post_type_object = get_post_type_object( $this->post_type );
+
 			// Remove the home URL base.
-			$uri = str_replace( trailingslashit( home_url() ), '', $post_link );
+			$old_path = str_replace( trailingslashit( home_url() ), '/', $post_link );
+
+			// Remove the post type object rewrite
+			$old_path = str_replace( '/' . $post_type_object->rewrite['slug'] . '/', '/', $old_path );
+
+			// Start building the new path.
+			$path = $this->prefix . implode( '/', $this->order );
 
 			// get the primary term.
-			$term = $this->get_the_first_term( $post, $this->taxonomy );
+			if ( in_array( '%term%', $this->order ) ) {
+				$term = $this->get_the_first_term( $post, $this->taxonomy );
+				$path = str_replace( '%term%', $term->slug, $path );
+			}
+
+			if ( in_array( '%post_type%', $this->order ) ) {
+				$path = str_replace( '%post_type%', $post_type_object->rewrite['slug'], $path );
+			}
 
 			if ( ! is_wp_error( $term ) && ! empty( $term ) ) {
+
+				$path .= $old_path;
+
 				// Return re-adding home URL base.
-				return home_url( trailingslashit( $term->slug ) . $uri );
+				return home_url( $path );
 			}
 
 			return $post_link;
@@ -811,6 +826,19 @@ if ( ! class_exists( 'WPS\Plugins\Rewrite\PostTypeTaxonomy' ) ) {
 				// Singular URLs.
 				if ( $post_type_object->public ) {
 
+					// {path}/embed/ Embed URLs.
+					if ( $this->rewrites['embed'] ) {
+						$rules[ $path . '([^/]+)?(.?.+?)/embed/?$' ] = 'index.php?' . build_query( array(
+								'wps-taxonomy'   => $this->taxonomy,
+								'wps-term'       => $term->slug,
+//							$this->taxonomy  => $term->slug, // throws an error
+								'post_type'      => $this->post_type,
+								$this->post_type => '$matches[2]',
+								'page'           => '$matches[2]',
+								'embed'          => 'true',
+							) );
+					}
+
 					// {prefix}/{term}/{custom-post-type}/{postname} URLs.
 					$rules[ $path . '([^/]+)?(.?.+?)(?:/([0-9]+))?/?$' ] = 'index.php?' . build_query( array(
 							'wps-taxonomy'   => $this->taxonomy,
@@ -820,6 +848,19 @@ if ( ! class_exists( 'WPS\Plugins\Rewrite\PostTypeTaxonomy' ) ) {
 							$this->post_type => '$matches[2]',
 							'page'           => '$matches[2]',
 						) );
+
+					// {path}/embed/ Embed URLs.
+					if ( $this->rewrites['embed'] ) {
+						$rules[ $this->prefix . $term->slug . '([^/]+)?(.?.+?)/embed/?$' ] = 'index.php?' . build_query( array(
+								'wps-taxonomy'   => $this->taxonomy,
+								'wps-term'       => $term->slug,
+//							$this->taxonomy  => $term->slug, // throws an error
+								'post_type'      => $this->post_type,
+								$this->post_type => '$matches[2]',
+								'page'           => '$matches[2]',
+								'embed'          => 'true',
+							) );
+					}
 
 					// {prefix}/{term}/{postname} URLs.
 					$rules[ $this->prefix . $term->slug . '([^/]+)?(.?.+?)(?:/([0-9]+))?/?$' ] = 'index.php?' . build_query( array(
@@ -916,8 +957,8 @@ if ( ! class_exists( 'WPS\Plugins\Rewrite\PostTypeTaxonomy' ) ) {
 		 */
 		public function defaults() {
 
-			$defaults              = parent::defaults();
-			$defaults['taxonomy']  = '';
+			$defaults             = parent::defaults();
+			$defaults['taxonomy'] = '';
 
 			return $defaults;
 
