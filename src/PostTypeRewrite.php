@@ -73,7 +73,13 @@ if ( ! class_exists( 'WPS\Rewrite\PostTypeRewrite' ) ) {
 			if ( ! isset( $args['post_type'] ) ) {
 				throw new \Exception( __( 'post_type are required to be set.', 'wps-rewrite' ) );
 			}
+
 			$this->post_type = $args['post_type'];
+
+			// Make sure we check the slugs.
+			add_filter( 'wp_unique_post_slug_is_bad_attachment_slug', array( $this, 'wp_unique_post_slug_is_bad_attachment_slug' ), 10, 2 );
+			add_filter( 'wp_unique_post_slug_is_bad_hierarchical_slug', array( $this, 'wp_unique_post_slug_is_bad_hierarchical_slug' ), 10, 4 );
+			add_filter( 'wp_unique_post_slug_is_bad_flat_slug', array( $this, 'wp_unique_post_slug_is_bad_flat_slug' ), 10, 3 );
 
 			// Permalink preview.
 			add_filter( 'post_type_link', array( $this, 'post_type_link' ), 10, 2 );
@@ -197,6 +203,7 @@ if ( ! class_exists( 'WPS\Rewrite\PostTypeRewrite' ) ) {
 		 * @return array Rewrite rules.
 		 */
 		protected function get_cpt_rewrite_rules( $path ) {
+
 			$rules = [];
 
 			// {path}/ Archive URL.
@@ -376,6 +383,74 @@ if ( ! class_exists( 'WPS\Rewrite\PostTypeRewrite' ) ) {
 			}
 
 			return $rules;
+
+		}
+
+		/**
+		 * Determines whether the post slug is unique.
+		 *
+		 * @access private
+		 *
+		 * @param bool $needs_suffix Whether the slug needs a suffix added.
+		 * @param string $slug The slug being checked.
+		 * @param string $post_type The post type.
+		 * @param int|null $post_parent Post Parent ID.
+		 *
+		 * @return bool
+		 */
+		public function wp_unique_post_slug_is_bad_slug( $needs_suffix, $slug, $post_type = null, $post_parent = null ) {
+
+			if ( $this->prefix === $slug ) {
+				return true;
+			}
+
+			return $needs_suffix;
+
+		}
+
+		/**
+		 * Determines whether the post slug is unique.
+		 *
+		 * @access private
+		 *
+		 * @param bool $needs_suffix Whether the slug needs a suffix added.
+		 * @param string $slug The slug being checked.
+		 * @param string $post_type The post type.
+		 *
+		 * @return bool
+		 */
+		public function wp_unique_post_slug_is_bad_flat_slug( $needs_suffix, $slug, $post_type ) {
+			return $this->wp_unique_post_slug_is_bad_slug( $needs_suffix, $slug, $post_type );
+		}
+
+		/**
+		 * Determines whether the post slug is unique.
+		 *
+		 * @access private
+		 *
+		 * @param bool $needs_suffix Whether the slug needs a suffix added.
+		 * @param string $slug The slug being checked.
+		 * @param string $post_type The post type.
+		 * @param int|null $post_parent Post Parent ID.
+		 *
+		 * @return bool
+		 */
+		public function wp_unique_post_slug_is_bad_hierarchical_slug( $needs_suffix, $slug, $post_type, $post_parent ) {
+			return $this->wp_unique_post_slug_is_bad_slug( $needs_suffix, $slug, $post_type, $post_parent );
+		}
+
+		/**
+		 * Determines whether the post slug is unique.
+		 *
+		 * @access private
+		 *
+		 * @param bool $needs_suffix Whether the slug needs a suffix added.
+		 * @param string $slug The slug being checked.
+		 *
+		 * @return bool
+		 */
+		public function wp_unique_post_slug_is_bad_attachment_slug( $needs_suffix, $slug ) {
+			return $this->wp_unique_post_slug_is_bad_slug( $needs_suffix, $slug, 'attachment' );
 		}
 
 		/**
