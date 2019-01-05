@@ -30,21 +30,7 @@ if ( ! class_exists( 'WPS\Plugins\Rewrite\PostTypeTaxonomy' ) ) {
 	 *
 	 * @package WPS\Rewrite
 	 */
-	class PostTypeByTaxonomy extends RewriteEndpoint {
-
-		/**
-		 * Post Type.
-		 *
-		 * @var string
-		 */
-		protected $post_type;
-
-		/**
-		 * Post Type Slug.
-		 *
-		 * @var string
-		 */
-		protected $post_type_slug;
+	class PostTypeByTaxonomy extends PostTypeRewrite {
 
 		/**
 		 * Taxonomy.
@@ -52,13 +38,6 @@ if ( ! class_exists( 'WPS\Plugins\Rewrite\PostTypeTaxonomy' ) ) {
 		 * @var string
 		 */
 		protected $taxonomy;
-
-		/**
-		 * Prefix of the URL base.
-		 *
-		 * @var string
-		 */
-		protected $prefix = '';
 
 		/**
 		 * The order of the slugs.
@@ -71,17 +50,7 @@ if ( ! class_exists( 'WPS\Plugins\Rewrite\PostTypeTaxonomy' ) ) {
 		);
 
 		/**
-		 * @var array
-		 */
-		protected $rewrites = [
-			'date'  => false,
-			'feed'  => false,
-			'page'  => true,
-			'embed' => false,
-		];
-
-		/**
-		 * Rewrite_Endpoint constructor.
+		 * RewriteEndpoint constructor.
 		 *
 		 * @throws \Exception When post_type and taxonomy are not set.
 		 *
@@ -119,8 +88,44 @@ if ( ! class_exists( 'WPS\Plugins\Rewrite\PostTypeTaxonomy' ) ) {
 
 		}
 
+		/** PUBLIC API */
+
+		/**
+		 * Order for the URL Path.
+		 *
+		 * @param []string $order Order of slugs.
+		 *
+		 * @return []string The order.
+		 */
+		public function set_order( $order ) {
+
+			$the_order = [];
+			$defaults  = [
+				'%term%',
+				'%post_type%',
+			];
+
+			foreach ( $order as $o ) {
+				if ( in_array( $o, $defaults, true ) ) {
+					$the_order[] = $o;
+				}
+			}
+
+			$c = count( $the_order );
+			if ( 2 === $c || 1 === $c ) {
+				$this->order = $the_order;
+			}
+
+			return $this->order;
+
+		}
+
+		/** PRIVATE */
+
 		/**
 		 * Filters the permalink for a post of a custom post type.
+		 *
+		 * @access private
 		 *
 		 * @param string $post_link The post's permalink.
 		 * @param \WP_Post $post The post in question.
@@ -149,6 +154,8 @@ if ( ! class_exists( 'WPS\Plugins\Rewrite\PostTypeTaxonomy' ) ) {
 		/**
 		 * Determines whether the post slug is unique.
 		 *
+		 * @access private
+		 *
 		 * @param bool $needs_suffix Whether the slug needs a suffix added.
 		 * @param string $slug The slug being checked.
 		 * @param string $post_type The post type.
@@ -171,6 +178,10 @@ if ( ! class_exists( 'WPS\Plugins\Rewrite\PostTypeTaxonomy' ) ) {
 		}
 
 		/**
+		 * Determines whether the term slug is unique.
+		 *
+		 * @access private
+		 *
 		 * @param bool $needs_suffix Whether the slug needs a suffix added.
 		 * @param string $slug The slug being checked.
 		 * @param \WP_Term $term Term Object.
@@ -196,6 +207,8 @@ if ( ! class_exists( 'WPS\Plugins\Rewrite\PostTypeTaxonomy' ) ) {
 		/**
 		 * Determines whether the post slug is unique.
 		 *
+		 * @access private
+		 *
 		 * @param bool $needs_suffix Whether the slug needs a suffix added.
 		 * @param string $slug The slug being checked.
 		 * @param string $post_type The post type.
@@ -208,6 +221,8 @@ if ( ! class_exists( 'WPS\Plugins\Rewrite\PostTypeTaxonomy' ) ) {
 
 		/**
 		 * Determines whether the post slug is unique.
+		 *
+		 * @access private
 		 *
 		 * @param bool $needs_suffix Whether the slug needs a suffix added.
 		 * @param string $slug The slug being checked.
@@ -223,6 +238,8 @@ if ( ! class_exists( 'WPS\Plugins\Rewrite\PostTypeTaxonomy' ) ) {
 		/**
 		 * Determines whether the post slug is unique.
 		 *
+		 * @access private
+		 *
 		 * @param bool $needs_suffix Whether the slug needs a suffix added.
 		 * @param string $slug The slug being checked.
 		 *
@@ -237,6 +254,7 @@ if ( ! class_exists( 'WPS\Plugins\Rewrite\PostTypeTaxonomy' ) ) {
 		 *
 		 * Heavily borrowed from Bill Erickson.
 		 *
+		 * @access private
 		 * @link https://github.com/billerickson/EA-Genesis-Child/
 		 *
 		 * @param \WP_Post|int $post_or_id The Post or the Post ID.
@@ -303,6 +321,7 @@ if ( ! class_exists( 'WPS\Plugins\Rewrite\PostTypeTaxonomy' ) ) {
 		/**
 		 * Gets the terms for this.
 		 *
+		 * @access private
 		 * @return array|int|\WP_Error
 		 */
 		protected function get_terms() {
@@ -315,101 +334,9 @@ if ( ! class_exists( 'WPS\Plugins\Rewrite\PostTypeTaxonomy' ) ) {
 		}
 
 		/**
-		 * Prefix for the URL path.
-		 *
-		 * @param string $prefix Prefix.
-		 */
-		public function set_prefix( $prefix ) {
-
-			$this->prefix = '' !== $prefix ? trailingslashit( $prefix ) : '';
-
-		}
-
-		/**
-		 * Order for the URL Path.
-		 *
-		 * @param []string $order Order of slugs.
-		 *
-		 * @return []string The order.
-		 */
-		public function set_order( $order ) {
-
-			$the_order = [];
-			$defaults  = [
-				'%term%',
-				'%post_type%',
-			];
-
-			foreach ( $order as $o ) {
-				if ( in_array( $o, $defaults, true ) ) {
-					$the_order[] = $o;
-				}
-			}
-
-			if ( 2 === count( $the_order ) ) {
-				$this->order = $the_order;
-			}
-
-			return $this->order;
-
-		}
-
-		/**
-		 * Adds date rewrite rules.
-		 */
-		public function add_date_rewrites() {
-
-			$this->rewrites['date'] = true;
-
-		}
-
-		/**
-		 * Ensures that date rewrite rules are not added.
-		 */
-		public function remove_date_rewrites() {
-
-			$this->rewrites['date'] = false;
-
-		}
-
-		/**
-		 * Adds embed rewrite rules.
-		 */
-		public function add_embed_rewrites() {
-
-			$this->rewrites['embed'] = true;
-
-		}
-
-		/**
-		 * Ensures that embed rewrite rules are not added.
-		 */
-		public function remove_embed_rewrites() {
-
-			$this->rewrites['embed'] = false;
-
-		}
-
-		/**
-		 * Adds feed rewrite rules.
-		 */
-		public function add_feed_rewrites() {
-
-			$this->rewrites['feed'] = true;
-
-		}
-
-		/**
-		 * Ensures that feed rewrite rules are not added.
-		 */
-		public function remove_feed_rewrites() {
-
-			$this->rewrites['feed'] = false;
-
-		}
-
-		/**
 		 * Gets the Custom Post Type rewrite rules.
+		 *
+		 * @access private
 		 *
 		 * @param string $path Path before the dynamic rules.
 		 *
@@ -424,154 +351,183 @@ if ( ! class_exists( 'WPS\Plugins\Rewrite\PostTypeTaxonomy' ) ) {
 				) );
 
 			// Pagination. {prefix}/{term}/{custom-post-type} Archive URLs.
-			$rules[ $path . '/page/?([0-9]{1,})/?$' ] = 'index.php?' . build_query( array(
-					'post_type' => $this->post_type,
-					'paged'     => '$matches[1]',
-				) );
+			if ( $this->rewrites['page'] ) {
+				$rules[ $path . '/page/?([0-9]{1,})/?$' ] = 'index.php?' . build_query( array(
+						'post_type' => $this->post_type,
+						'paged'     => '$matches[1]',
+					) );
+			}
 
-			// Feed. {prefix}/{term}/{custom-post-type}/feed/rss/ Archive URLs.
-			$rules[ $path . '/feed/(feed|rdf|rss|rss2|atom)/?$' ] = 'index.php?' . build_query( array(
-					'post_type' => $this->post_type,
-					'feed'      => '$matches[1]',
-				) );
+			if ( $this->rewrites['feed'] ) {
+				// Feed. {prefix}/{term}/{custom-post-type}/feed/rss/ Archive URLs.
+				$rules[ $path . '/feed/(feed|rdf|rss|rss2|atom)/?$' ] = 'index.php?' . build_query( array(
+						'post_type' => $this->post_type,
+						'feed'      => '$matches[1]',
+					) );
 
-			// Feed. {prefix}/{term}/{custom-post-type}/rss/ Archive URLs.
-			$rules[ $path . '/(feed|rdf|rss|rss2|atom)/?$' ] = 'index.php?' . build_query( array(
-					'post_type' => $this->post_type,
-					'feed'      => '$matches[1]',
-				) );
+				// Feed. {prefix}/{term}/{custom-post-type}/rss/ Archive URLs.
+				$rules[ $path . '/(feed|rdf|rss|rss2|atom)/?$' ] = 'index.php?' . build_query( array(
+						'post_type' => $this->post_type,
+						'feed'      => '$matches[1]',
+					) );
+			}
 
 			// Embed. {prefix}/{term}/{custom-post-type}/embed/ Archive URLs.
-			$rules[ $path . '/embed/?$' ] = 'index.php?' . build_query( array(
-					'post_type' => $this->post_type,
-					'embed'     => 'true',
-				) );
+			if ( $this->rewrites['embed'] ) {
+				$rules[ $path . '/embed/?$' ] = 'index.php?' . build_query( array(
+						'post_type' => $this->post_type,
+						'embed'     => 'true',
+					) );
+			}
 
-			// Year, Month, Day Archives.
-			// /YYYY/MM/DD/ Archive URLs.
-			$rules[ $path . '/([0-9]{4})/([0-9]{1,2})/([0-9]{1,2})/?$' ] = 'index.php?' . build_query( array(
-					'post_type' => $this->post_type,
-					'year'      => '$matches[1]',
-					'monthnum'  => '$matches[2]',
-					'day'       => '$matches[3]',
-				) );
+			if ( $this->rewrites['date'] ) {
 
-			// /YYYY/MM/DD/page/#/ Archive URLs.
-			$rules[ $path . '/([0-9]{4})/([0-9]{1,2})/([0-9]{1,2})/page/?([0-9]{1,})/?$' ] = 'index.php?' . build_query( array(
-					'post_type' => $this->post_type,
-					'year'      => '$matches[1]',
-					'monthnum'  => '$matches[2]',
-					'day'       => '$matches[3]',
-					'paged'     => '$matches[4]',
-				) );
+				// YEAR-MONTH-DAY Archives.
+				// /YYYY/MM/DD/ Archive URLs.
+				$rules[ $path . '/([0-9]{4})/([0-9]{1,2})/([0-9]{1,2})/?$' ] = 'index.php?' . build_query( array(
+						'post_type' => $this->post_type,
+						'year'      => '$matches[1]',
+						'monthnum'  => '$matches[2]',
+						'day'       => '$matches[3]',
+					) );
 
-			// /YYYY/MM/DD/feed/rss/ Archive URLs.
-			$rules[ $path . '/([0-9]{4})/([0-9]{1,2})/([0-9]{1,2})/feed/(feed|rdf|rss|rss2|atom)/?$' ] = 'index.php?' . build_query( array(
-					'post_type' => $this->post_type,
-					'year'      => '$matches[1]',
-					'monthnum'  => '$matches[2]',
-					'day'       => '$matches[3]',
-					'feed'      => '$matches[4]',
-				) );
+				// /YYYY/MM/DD/page/#/ Archive URLs.
+				if ( $this->rewrites['page'] ) {
+					$rules[ $path . '/([0-9]{4})/([0-9]{1,2})/([0-9]{1,2})/page/?([0-9]{1,})/?$' ] = 'index.php?' . build_query( array(
+							'post_type' => $this->post_type,
+							'year'      => '$matches[1]',
+							'monthnum'  => '$matches[2]',
+							'day'       => '$matches[3]',
+							'paged'     => '$matches[4]',
+						) );
+				}
 
-			// /YYYY/MM/DD/rss/ Archive URLs.
-			$rules[ $path . '/([0-9]{4})/([0-9]{1,2})/([0-9]{1,2})/(feed|rdf|rss|rss2|atom)/?$' ] = 'index.php?' . build_query( array(
-					'post_type' => $this->post_type,
-					'year'      => '$matches[1]',
-					'monthnum'  => '$matches[2]',
-					'day'       => '$matches[3]',
-					'feed'      => '$matches[4]',
-				) );
+				if ( $this->rewrites['feed'] ) {
+					// /YYYY/MM/DD/feed/rss/ Archive URLs.
+					$rules[ $path . '/([0-9]{4})/([0-9]{1,2})/([0-9]{1,2})/feed/(feed|rdf|rss|rss2|atom)/?$' ] = 'index.php?' . build_query( array(
+							'post_type' => $this->post_type,
+							'year'      => '$matches[1]',
+							'monthnum'  => '$matches[2]',
+							'day'       => '$matches[3]',
+							'feed'      => '$matches[4]',
+						) );
 
-			// /YYYY/MM/DD/embed/ Archive URLs.
-			$rules[ $path . '/([0-9]{4})/([0-9]{1,2})/([0-9]{1,2})/embed/?$' ] = 'index.php?' . build_query( array(
-					'post_type' => $this->post_type,
-					'year'      => '$matches[1]',
-					'monthnum'  => '$matches[2]',
-					'day'       => '$matches[3]',
-					'embed'     => 'true',
-				) );
+					// /YYYY/MM/DD/rss/ Archive URLs.
+					$rules[ $path . '/([0-9]{4})/([0-9]{1,2})/([0-9]{1,2})/(feed|rdf|rss|rss2|atom)/?$' ] = 'index.php?' . build_query( array(
+							'post_type' => $this->post_type,
+							'year'      => '$matches[1]',
+							'monthnum'  => '$matches[2]',
+							'day'       => '$matches[3]',
+							'feed'      => '$matches[4]',
+						) );
+				}
 
-			// Year, Month Archives.
-			// /YYYY/MM/ Archive URLs.
-			$rules[ $path . '/([0-9]{4})/([0-9]{1,2})/?$' ] = 'index.php?' . build_query( array(
-					'post_type' => $this->post_type,
-					'year'      => '$matches[1]',
-					'monthnum'  => '$matches[2]',
-				) );
+				// /YYYY/MM/DD/embed/ Archive URLs.
+				if ( $this->rewrites['embed'] ) {
+					$rules[ $path . '/([0-9]{4})/([0-9]{1,2})/([0-9]{1,2})/embed/?$' ] = 'index.php?' . build_query( array(
+							'post_type' => $this->post_type,
+							'year'      => '$matches[1]',
+							'monthnum'  => '$matches[2]',
+							'day'       => '$matches[3]',
+							'embed'     => 'true',
+						) );
+				}
 
-			// /YYYY/MM/page/#/ Archive URLs.
-			$rules[ $path . '/([0-9]{4})/([0-9]{1,2})/page/?([0-9]{1,})/?$' ] = 'index.php?' . build_query( array(
-					'post_type' => $this->post_type,
-					'year'      => '$matches[1]',
-					'monthnum'  => '$matches[2]',
-					'paged'     => '$matches[3]',
-				) );
+				// YEAR-MONTH Archives.
+				// /YYYY/MM/ Archive URLs.
+				$rules[ $path . '/([0-9]{4})/([0-9]{1,2})/?$' ] = 'index.php?' . build_query( array(
+						'post_type' => $this->post_type,
+						'year'      => '$matches[1]',
+						'monthnum'  => '$matches[2]',
+					) );
 
-			// /YYYY/MM/feed/rss/ Archive URLs.
-			$rules[ $path . '/([0-9]{4})/([0-9]{1,2})/feed/(feed|rdf|rss|rss2|atom)/?$' ] = 'index.php?' . build_query( array(
-					'post_type' => $this->post_type,
-					'year'      => '$matches[1]',
-					'monthnum'  => '$matches[2]',
-					'feed'      => '$matches[3]',
-				) );
+				// /YYYY/MM/page/#/ Archive URLs.
+				if ( $this->rewrites['page'] ) {
+					$rules[ $path . '/([0-9]{4})/([0-9]{1,2})/page/?([0-9]{1,})/?$' ] = 'index.php?' . build_query( array(
+							'post_type' => $this->post_type,
+							'year'      => '$matches[1]',
+							'monthnum'  => '$matches[2]',
+							'paged'     => '$matches[3]',
+						) );
+				}
 
-			// /YYYY/MM/rss/ Archive URLs.
-			$rules[ $path . '/([0-9]{4})/([0-9]{1,2})/(feed|rdf|rss|rss2|atom)/?$' ] = 'index.php?' . build_query( array(
-					'post_type' => $this->post_type,
-					'year'      => '$matches[1]',
-					'monthnum'  => '$matches[2]',
-					'feed'      => '$matches[3]',
-				) );
+				if ( $this->rewrites['feed'] ) {
+					// /YYYY/MM/feed/rss/ Archive URLs.
+					$rules[ $path . '/([0-9]{4})/([0-9]{1,2})/feed/(feed|rdf|rss|rss2|atom)/?$' ] = 'index.php?' . build_query( array(
+							'post_type' => $this->post_type,
+							'year'      => '$matches[1]',
+							'monthnum'  => '$matches[2]',
+							'feed'      => '$matches[3]',
+						) );
 
-			// /YYYY/MM/embed/ Archive URLs.
-			$rules[ $path . '/([0-9]{4})/([0-9]{1,2})/embed/?$' ] = 'index.php?' . build_query( array(
-					'post_type' => $this->post_type,
-					'year'      => '$matches[1]',
-					'monthnum'  => '$matches[2]',
-					'embed'     => 'true',
-				) );
+					// /YYYY/MM/rss/ Archive URLs.
+					$rules[ $path . '/([0-9]{4})/([0-9]{1,2})/(feed|rdf|rss|rss2|atom)/?$' ] = 'index.php?' . build_query( array(
+							'post_type' => $this->post_type,
+							'year'      => '$matches[1]',
+							'monthnum'  => '$matches[2]',
+							'feed'      => '$matches[3]',
+						) );
+				}
 
-			// Year Archives.
-			// /YYYY/ Archive URLs.
-			$rules[ $path . '/([0-9]{4})/?$' ] = 'index.php?' . build_query( array(
-					'post_type' => $this->post_type,
-					'year'      => '$matches[1]',
-				) );
+				// /YYYY/MM/embed/ Archive URLs.
+				if ( $this->rewrites['embed'] ) {
+					$rules[ $path . '/([0-9]{4})/([0-9]{1,2})/embed/?$' ] = 'index.php?' . build_query( array(
+							'post_type' => $this->post_type,
+							'year'      => '$matches[1]',
+							'monthnum'  => '$matches[2]',
+							'embed'     => 'true',
+						) );
+				}
 
-			// /YYYY/page/#/ Archive URLs.
-			$rules[ $path . '/([0-9]{4})/page/?([0-9]{1,})/?$' ] = 'index.php?' . build_query( array(
-					'post_type' => $this->post_type,
-					'year'      => '$matches[1]',
-					'paged'     => '$matches[2]',
-				) );
+				// YEAR Archives.
+				// /YYYY/ Archive URLs.
+				$rules[ $path . '/([0-9]{4})/?$' ] = 'index.php?' . build_query( array(
+						'post_type' => $this->post_type,
+						'year'      => '$matches[1]',
+					) );
 
-			// /YYYY/feed/rss/ Archive URLs.
-			$rules[ $path . '/([0-9]{4})/feed/(feed|rdf|rss|rss2|atom)/?$' ] = 'index.php?' . build_query( array(
-					'post_type' => $this->post_type,
-					'year'      => '$matches[1]',
-					'feed'      => '$matches[2]',
-				) );
+				// /YYYY/page/#/ Archive URLs.
+				if ( $this->rewrites['page'] ) {
+					$rules[ $path . '/([0-9]{4})/page/?([0-9]{1,})/?$' ] = 'index.php?' . build_query( array(
+							'post_type' => $this->post_type,
+							'year'      => '$matches[1]',
+							'paged'     => '$matches[2]',
+						) );
+				}
 
-			// /YYYY/rss/ Archive URLs.
-			$rules[ $path . '/([0-9]{4})/([0-9]{1,2})/(feed|rdf|rss|rss2|atom)/?$' ] = 'index.php?' . build_query( array(
-					'post_type' => $this->post_type,
-					'year'      => '$matches[1]',
-					'feed'      => '$matches[2]',
-				) );
+				if ( $this->rewrites['feed'] ) {
+					// /YYYY/feed/rss/ Archive URLs.
+					$rules[ $path . '/([0-9]{4})/feed/(feed|rdf|rss|rss2|atom)/?$' ] = 'index.php?' . build_query( array(
+							'post_type' => $this->post_type,
+							'year'      => '$matches[1]',
+							'feed'      => '$matches[2]',
+						) );
 
-			// /YYYY/embed/ Archive URLs.
-			$rules[ $path . '/([0-9]{4})/embed/?$' ] = 'index.php?' . build_query( array(
-					'post_type' => $this->post_type,
-					'year'      => '$matches[1]',
-					'embed'     => 'true',
-				) );
+					// /YYYY/rss/ Archive URLs.
+					$rules[ $path . '/([0-9]{4})/([0-9]{1,2})/(feed|rdf|rss|rss2|atom)/?$' ] = 'index.php?' . build_query( array(
+							'post_type' => $this->post_type,
+							'year'      => '$matches[1]',
+							'feed'      => '$matches[2]',
+						) );
+				}
+
+				// /YYYY/embed/ Archive URLs.
+				if ( $this->rewrites['embed'] ) {
+					$rules[ $path . '/([0-9]{4})/embed/?$' ] = 'index.php?' . build_query( array(
+							'post_type' => $this->post_type,
+							'year'      => '$matches[1]',
+							'embed'     => 'true',
+						) );
+				}
+			}
 
 			return $rules;
 		}
 
 		/**
 		 * Gets the Custom Post Type / Term rewrite rules.
+		 *
+		 * @access private
 		 *
 		 * @param string $path Path before the dynamic rules.
 		 * @param \WP_Term $term The term object.
@@ -816,7 +772,9 @@ if ( ! class_exists( 'WPS\Plugins\Rewrite\PostTypeTaxonomy' ) ) {
 		/**
 		 * Adds rewrite rules.
 		 *
-		 * @param \WP_Rewrite $this Current WP_Rewrite instance (passed by reference).
+		 * @access private
+		 *
+		 * @param \WP_Rewrite $wp_rewrite Current WP_Rewrite instance (passed by reference).
 		 *
 		 * @return array
 		 */
@@ -886,6 +844,8 @@ if ( ! class_exists( 'WPS\Plugins\Rewrite\PostTypeTaxonomy' ) ) {
 		/**
 		 * Adjusts WP_Query as necessary.
 		 *
+		 * @access private
+		 *
 		 * @param \WP_Query $query Current Query.
 		 */
 		public function pre_get_posts( $query ) {
@@ -951,12 +911,12 @@ if ( ! class_exists( 'WPS\Plugins\Rewrite\PostTypeTaxonomy' ) ) {
 		/**
 		 * Default args.
 		 *
+		 * @access private
 		 * @return array Array of defaults.
 		 */
 		public function defaults() {
 
 			$defaults              = parent::defaults();
-			$defaults['post_type'] = '';
 			$defaults['taxonomy']  = '';
 
 			return $defaults;
@@ -966,6 +926,7 @@ if ( ! class_exists( 'WPS\Plugins\Rewrite\PostTypeTaxonomy' ) ) {
 		/**
 		 * Whether the current query has this's query var.
 		 *
+		 * @access private
 		 * @return bool
 		 */
 		protected function has_query_var() {
