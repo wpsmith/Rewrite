@@ -23,7 +23,7 @@
   },
   "autoload": {
     "psr-4": {
-      "WPS\\Rewrite\\": "src/"
+      "WPS\\WP\\Rewrite\\": "src/"
     }
   }
 }
