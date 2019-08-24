@@ -1,5 +1,12 @@
-# Created by .ignore support plugin (hsz.mobi)
-### SublimeText template
+# WP Unit Testing
+phpcs.xml
+phpunit.xml
+Thumbs.db
+wp-cli.local.yml
+*.sql
+*.tar.gz
+*.zip
+
 # Cache files for Sublime Text
 *.tmlanguage.cache
 *.tmPreferences.cache
