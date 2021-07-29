@@ -68,13 +68,16 @@ if ( ! class_exists( __NAMESPACE__ . '\PostTypeRewrite' ) ) {
 		 */
 		public function __construct( $slug, $args = array() ) {
 
-			$args = $this->get_args( $slug, $args );
+			// Construct.
+			parent::__construct( $slug, $args );
 
-			if ( ! isset( $args['post_type'] ) ) {
+			// Make sure we have what we need!
+			if ( ! isset( $this->args['post_type'] ) ) {
 				throw new \Exception( __( 'post_type are required to be set.', 'wps-rewrite' ) );
 			}
 
-			$this->post_type = $args['post_type'];
+			$this->post_type = $this->args['post_type'];
+			$this->prefix    = isset( $this->args['prefix'] ) ? $this->args['prefix'] : '';
 
 			// Make sure we check the slugs.
 			add_filter( 'wp_unique_post_slug_is_bad_attachment_slug', array( $this, 'wp_unique_post_slug_is_bad_attachment_slug' ), 10, 2 );
@@ -83,9 +86,6 @@ if ( ! class_exists( __NAMESPACE__ . '\PostTypeRewrite' ) ) {
 
 			// Permalink preview.
 			add_filter( 'post_type_link', array( $this, 'post_type_link' ), 10, 2 );
-
-			// Construct.
-			parent::__construct( $this->var, $args );
 
 		}
 

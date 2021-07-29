@@ -52,23 +52,23 @@ if ( ! class_exists( __NAMESPACE__ . '\PostTypeByTaxonomy' ) ) {
 		/**
 		 * RewriteEndpoint constructor.
 		 *
-		 * @throws \Exception When post_type and taxonomy are not set.
-		 *
 		 * @param array|string $slug Endpoint slug.
 		 * @param array $args Array of class args.
+		 *
+		 * @throws \Exception When post_type and taxonomy are not set.
+		 *
 		 */
 		public function __construct( $slug, $args = array() ) {
 
 			// Construct.
-			parent::__construct( $this->var, $args );
+			parent::__construct( $slug, $args );
 
-			$args = $this->get_args( $slug, $args );
-
-			if ( ! isset( $args['post_type'] ) || ! isset( $args['taxonomy'] ) ) {
-				throw new \Exception( __( 'post_type and taxonomy are required to be set.', 'wps-rewrite' ) );
+			// Make sure we have what we need!
+			if ( ! isset( $this->args['taxonomy'] ) ) {
+				throw new \Exception( __( 'taxonomy is required to be set.', 'wps-rewrite' ) );
 			}
 
-			$this->taxonomy  = $args['taxonomy'];
+			$this->taxonomy = $this->args['taxonomy'];
 
 			// @todo Determine whether this is really needed. Could be needed because this taxonomy term could be part of another rewrite deal.
 			add_filter( 'wp_unique_term_slug_is_bad_slug', array( $this, 'wp_unique_term_slug_is_bad_slug' ), 10, 3 );
@@ -314,16 +314,20 @@ if ( ! class_exists( __NAMESPACE__ . '\PostTypeByTaxonomy' ) ) {
 			// {path}/ Archive URL.
 			$rules[ $path . '/?$' ] = 'index.php?' . build_query( array(
 					'wps-post_type' => $this->post_type,
+					'wps-taxonomy'  => $this->taxonomy,
+					'wps-term'      => $term->slug,
 					$this->taxonomy => $term->slug,
-//					'post_type'     => $this->post_type,
+					'post_type'     => $this->post_type,
 				) );
 
 			// {path}/page/#/ Pagination Archive URLs.
 			if ( $this->rewrites['page'] ) {
 				$rules[ $path . '/page/?([0-9]{1,})/?$' ] = 'index.php?' . build_query( array(
 						'wps-post_type' => $this->post_type,
+						'wps-taxonomy'  => $this->taxonomy,
+						'wps-term'      => $term->slug,
 						$this->taxonomy => $term->slug,
-//					'post_type'     => $this->post_type,
+						'post_type'     => $this->post_type,
 						'paged'         => '$matches[1]',
 					) );
 			}
@@ -332,16 +336,20 @@ if ( ! class_exists( __NAMESPACE__ . '\PostTypeByTaxonomy' ) ) {
 				// {path}/feed/rss/ Feed URLs.
 				$rules[ $path . '/feed/(feed|rdf|rss|rss2|atom)/?$' ] = 'index.php?' . build_query( array(
 						'wps-post_type' => $this->post_type,
+						'wps-taxonomy'  => $this->taxonomy,
+						'wps-term'      => $term->slug,
 						$this->taxonomy => $term->slug,
-//					'post_type'     => $this->post_type,
+						'post_type'     => $this->post_type,
 						'feed'          => '$matches[1]',
 					) );
 
 				// {path}/rss/ Feed URLs.
 				$rules[ $path . '/(feed|rdf|rss|rss2|atom)/?$' ] = 'index.php?' . build_query( array(
 						'wps-post_type' => $this->post_type,
+						'wps-taxonomy'  => $this->taxonomy,
+						'wps-term'      => $term->slug,
 						$this->taxonomy => $term->slug,
-//					'post_type'     => $this->post_type,
+						'post_type'     => $this->post_type,
 						'feed'          => '$matches[1]',
 					) );
 			}
@@ -350,6 +358,9 @@ if ( ! class_exists( __NAMESPACE__ . '\PostTypeByTaxonomy' ) ) {
 			if ( $this->rewrites['embed'] ) {
 				$rules[ $path . '/embed/?$' ] = 'index.php?' . build_query( array(
 						$this->taxonomy => $term->slug,
+						'wps-taxonomy'  => $this->taxonomy,
+						'wps-term'      => $term->slug,
+						'wps-post_type' => $this->post_type,
 						'post_type'     => $this->post_type,
 						'embed'         => 'true',
 					) );
@@ -359,183 +370,198 @@ if ( ! class_exists( __NAMESPACE__ . '\PostTypeByTaxonomy' ) ) {
 			if ( $this->rewrites['date'] ) {
 				// {path}/YYYY/MM/DD/ Archive URLs.
 				$rules[ $path . '/([0-9]{4})/([0-9]{1,2})/([0-9]{1,2})/?$' ] = 'index.php?' . build_query( array(
-						'wps-taxonomy' => $this->taxonomy,
-						'wps-term'     => $term->slug,
-						'post_type'    => $this->post_type,
+						'wps-taxonomy'  => $this->taxonomy,
+						'wps-term'      => $term->slug,
+						'wps-post_type' => $this->post_type,
+						'post_type'     => $this->post_type,
 //							$this->taxonomy => $term->slug, // throws an error
-						'year'         => '$matches[1]',
-						'monthnum'     => '$matches[2]',
-						'day'          => '$matches[3]',
+						'year'          => '$matches[1]',
+						'monthnum'      => '$matches[2]',
+						'day'           => '$matches[3]',
 					) );
 
 				// {path}/YYYY/MM/DD/page/#/ Archive URLs.
 				if ( $this->rewrites['page'] ) {
 					$rules[ $path . '/([0-9]{4})/([0-9]{1,2})/([0-9]{1,2})/page/?([0-9]{1,})/?$' ] = 'index.php?' . build_query( array(
-							'wps-taxonomy' => $this->taxonomy,
-							'wps-term'     => $term->slug,
-							'post_type'    => $this->post_type,
+							'wps-taxonomy'  => $this->taxonomy,
+							'wps-term'      => $term->slug,
+							'wps-post_type' => $this->post_type,
+							'post_type'     => $this->post_type,
 //							$this->taxonomy => $term->slug, // throws an error
-							'year'         => '$matches[1]',
-							'monthnum'     => '$matches[2]',
-							'day'          => '$matches[3]',
-							'paged'        => '$matches[4]',
+							'year'          => '$matches[1]',
+							'monthnum'      => '$matches[2]',
+							'day'           => '$matches[3]',
+							'paged'         => '$matches[4]',
 						) );
 				}
 
 				if ( $this->rewrites['feed'] ) {
 					// {path}/YYYY/MM/DD/feed/rss/ Archive URLs.
 					$rules[ $path . '/([0-9]{4})/([0-9]{1,2})/([0-9]{1,2})/feed/(feed|rdf|rss|rss2|atom)/?$' ] = 'index.php?' . build_query( array(
-							'wps-taxonomy' => $this->taxonomy,
-							'wps-term'     => $term->slug,
-							'post_type'    => $this->post_type,
+							'wps-taxonomy'  => $this->taxonomy,
+							'wps-term'      => $term->slug,
+							'wps-post_type' => $this->post_type,
+							'post_type'     => $this->post_type,
 //							$this->taxonomy => $term->slug, // throws an error
-							'year'         => '$matches[1]',
-							'monthnum'     => '$matches[2]',
-							'day'          => '$matches[3]',
-							'feed'         => '$matches[4]',
+							'year'          => '$matches[1]',
+							'monthnum'      => '$matches[2]',
+							'day'           => '$matches[3]',
+							'feed'          => '$matches[4]',
 						) );
 
 					// {path}/YYYY/MM/DD/rss/ Archive URLs.
 					$rules[ $path . '/([0-9]{4})/([0-9]{1,2})/([0-9]{1,2})/(feed|rdf|rss|rss2|atom)/?$' ] = 'index.php?' . build_query( array(
-							'wps-taxonomy' => $this->taxonomy,
-							'wps-term'     => $term->slug,
-							'post_type'    => $this->post_type,
+							'wps-taxonomy'  => $this->taxonomy,
+							'wps-term'      => $term->slug,
+							'wps-post_type' => $this->post_type,
+							'post_type'     => $this->post_type,
 //							$this->taxonomy => $term->slug, // throws an error
-							'year'         => '$matches[1]',
-							'monthnum'     => '$matches[2]',
-							'day'          => '$matches[3]',
-							'feed'         => '$matches[4]',
+							'year'          => '$matches[1]',
+							'monthnum'      => '$matches[2]',
+							'day'           => '$matches[3]',
+							'feed'          => '$matches[4]',
 						) );
 				}
 
 				// {path}/YYYY/MM/DD/embed/ Archive URLs.
 				if ( $this->rewrites['embed'] ) {
 					$rules[ $path . '/([0-9]{4})/([0-9]{1,2})/([0-9]{1,2})/embed/?$' ] = 'index.php?' . build_query( array(
-							'wps-taxonomy' => $this->taxonomy,
-							'wps-term'     => $term->slug,
-							'post_type'    => $this->post_type,
+							'wps-taxonomy'  => $this->taxonomy,
+							'wps-term'      => $term->slug,
+							'wps-post_type' => $this->post_type,
+							'post_type'     => $this->post_type,
 //							$this->taxonomy => $term->slug, // throws an error
-							'year'         => '$matches[1]',
-							'monthnum'     => '$matches[2]',
-							'day'          => '$matches[3]',
-							'embed'        => 'true',
+							'year'          => '$matches[1]',
+							'monthnum'      => '$matches[2]',
+							'day'           => '$matches[3]',
+							'embed'         => 'true',
 						) );
 				}
 
 				// Year, Month Archives.
 				// {path}/YYYY/MM/ Archive URLs.
 				$rules[ $path . '/([0-9]{4})/([0-9]{1,2})/?$' ] = 'index.php?' . build_query( array(
-						'wps-taxonomy' => $this->taxonomy,
-						'wps-term'     => $term->slug,
-						'post_type'    => $this->post_type,
+						'wps-taxonomy'  => $this->taxonomy,
+						'wps-term'      => $term->slug,
+						'wps-post_type' => $this->post_type,
+						'post_type'     => $this->post_type,
 //							$this->taxonomy => $term->slug, // throws an error
-						'year'         => '$matches[1]',
-						'monthnum'     => '$matches[2]',
+						'year'          => '$matches[1]',
+						'monthnum'      => '$matches[2]',
 					) );
 
 				// {path}/YYYY/MM/page/#/ Archive URLs.
 				if ( $this->rewrites['page'] ) {
 					$rules[ $path . '/([0-9]{4})/([0-9]{1,2})/page/?([0-9]{1,})/?$' ] = 'index.php?' . build_query( array(
-							'wps-taxonomy' => $this->taxonomy,
-							'wps-term'     => $term->slug,
-							'post_type'    => $this->post_type,
+							'wps-taxonomy'  => $this->taxonomy,
+							'wps-term'      => $term->slug,
+							'wps-post_type' => $this->post_type,
+							'post_type'     => $this->post_type,
 //							$this->taxonomy => $term->slug, // throws an error
-							'year'         => '$matches[1]',
-							'monthnum'     => '$matches[2]',
-							'paged'        => '$matches[3]',
+							'year'          => '$matches[1]',
+							'monthnum'      => '$matches[2]',
+							'paged'         => '$matches[3]',
 						) );
 				}
 
 				if ( $this->rewrites['feed'] ) {
 					// {path}/YYYY/MM/feed/rss/ Archive URLs.
 					$rules[ $path . '/([0-9]{4})/([0-9]{1,2})/feed/(feed|rdf|rss|rss2|atom)/?$' ] = 'index.php?' . build_query( array(
-							'wps-taxonomy' => $this->taxonomy,
-							'wps-term'     => $term->slug,
-							'post_type'    => $this->post_type,
+							'wps-taxonomy'  => $this->taxonomy,
+							'wps-term'      => $term->slug,
+							'wps-post_type' => $this->post_type,
+							'post_type'     => $this->post_type,
 //							$this->taxonomy => $term->slug, // throws an error
-							'year'         => '$matches[1]',
-							'monthnum'     => '$matches[2]',
-							'feed'         => '$matches[3]',
+							'year'          => '$matches[1]',
+							'monthnum'      => '$matches[2]',
+							'feed'          => '$matches[3]',
 						) );
 
 					// {path}/YYYY/MM/rss/ Archive URLs.
 					$rules[ $path . '/([0-9]{4})/([0-9]{1,2})/(feed|rdf|rss|rss2|atom)/?$' ] = 'index.php?' . build_query( array(
-							'wps-taxonomy' => $this->taxonomy,
-							'wps-term'     => $term->slug,
-							'post_type'    => $this->post_type,
+							'wps-taxonomy'  => $this->taxonomy,
+							'wps-term'      => $term->slug,
+							'wps-post_type' => $this->post_type,
+							'post_type'     => $this->post_type,
 //							$this->taxonomy => $term->slug, // throws an error
-							'year'         => '$matches[1]',
-							'monthnum'     => '$matches[2]',
-							'feed'         => '$matches[3]',
+							'year'          => '$matches[1]',
+							'monthnum'      => '$matches[2]',
+							'feed'          => '$matches[3]',
 						) );
 				}
 
 				// {path}/YYYY/MM/embed/ Archive URLs.
 				if ( $this->rewrites['embed'] ) {
 					$rules[ $path . '/([0-9]{4})/([0-9]{1,2})/embed/?$' ] = 'index.php?' . build_query( array(
-							'wps-taxonomy' => $this->taxonomy,
-							'wps-term'     => $term->slug,
-							'post_type'    => $this->post_type,
+							'wps-taxonomy'  => $this->taxonomy,
+							'wps-term'      => $term->slug,
+							'wps-post_type' => $this->post_type,
+							'post_type'     => $this->post_type,
 //							$this->taxonomy => $term->slug, // throws an error
-							'year'         => '$matches[1]',
-							'monthnum'     => '$matches[2]',
-							'embed'        => 'true',
+							'year'          => '$matches[1]',
+							'monthnum'      => '$matches[2]',
+							'embed'         => 'true',
 						) );
 				}
 
 				// Year Archives.
 				// {path}/YYYY/ Archive URLs.
 				$rules[ $path . '/([0-9]{4})/?$' ] = 'index.php?' . build_query( array(
-						'wps-taxonomy' => $this->taxonomy,
-						'wps-term'     => $term->slug,
-						'post_type'    => $this->post_type,
+						'wps-taxonomy'  => $this->taxonomy,
+						'wps-term'      => $term->slug,
+						'wps-post_type' => $this->post_type,
+						'post_type'     => $this->post_type,
 //							$this->taxonomy => $term->slug, // throws an error
-						'year'         => '$matches[1]',
+						'year'          => '$matches[1]',
 					) );
 
 				// {path}/YYYY/page/#/ Archive URLs.
 				if ( $this->rewrites['page'] ) {
 					$rules[ $path . '/([0-9]{4})/page/?([0-9]{1,})/?$' ] = 'index.php?' . build_query( array(
-							'wps-taxonomy' => $this->taxonomy,
-							'wps-term'     => $term->slug,
-							'post_type'    => $this->post_type,
+							'wps-taxonomy'  => $this->taxonomy,
+							'wps-term'      => $term->slug,
+							'wps-post_type' => $this->post_type,
+							'post_type'     => $this->post_type,
 //							$this->taxonomy => $term->slug, // throws an error
-							'year'         => '$matches[1]',
-							'paged'        => '$matches[2]',
+							'year'          => '$matches[1]',
+							'paged'         => '$matches[2]',
 						) );
 				}
 
 				if ( $this->rewrites['feed'] ) {
 					// {path}/YYYY/feed/rss/ Archive URLs.
 					$rules[ $path . '/([0-9]{4})/feed/(feed|rdf|rss|rss2|atom)/?$' ] = 'index.php?' . build_query( array(
-							'wps-taxonomy' => $this->taxonomy,
-							'wps-term'     => $term->slug,
-							'post_type'    => $this->post_type,
+							'wps-taxonomy'  => $this->taxonomy,
+							'wps-term'      => $term->slug,
+							'wps-post_type' => $this->post_type,
+							'post_type'     => $this->post_type,
 //							$this->taxonomy => $term->slug, // throws an error
-							'year'         => '$matches[1]',
-							'feed'         => '$matches[2]',
+							'year'          => '$matches[1]',
+							'feed'          => '$matches[2]',
 						) );
 
 					// {path}/YYYY/rss/ Archive URLs.
 					$rules[ $path . '/([0-9]{4})/([0-9]{1,2})/(feed|rdf|rss|rss2|atom)/?$' ] = 'index.php?' . build_query( array(
-							'wps-taxonomy' => $this->taxonomy,
-							'wps-term'     => $term->slug,
-							'post_type'    => $this->post_type,
+							'wps-taxonomy'  => $this->taxonomy,
+							'wps-term'      => $term->slug,
+							'wps-post_type' => $this->post_type,
+							'post_type'     => $this->post_type,
 //							$this->taxonomy => $term->slug, // throws an error
-							'year'         => '$matches[1]',
-							'feed'         => '$matches[2]',
+							'year'          => '$matches[1]',
+							'feed'          => '$matches[2]',
 						) );
 				}
 
 				// {path}/YYYY/embed/ Archive URLs.
 				if ( $this->rewrites['embed'] ) {
 					$rules[ $path . '/([0-9]{4})/embed/?$' ] = 'index.php?' . build_query( array(
-							'wps-taxonomy' => $this->taxonomy,
-							'wps-term'     => $term->slug,
-							'post_type'    => $this->post_type,
+							'wps-taxonomy'  => $this->taxonomy,
+							'wps-term'      => $term->slug,
+							'wps-post_type' => $this->post_type,
+							'post_type'     => $this->post_type,
 //							$this->taxonomy => $term->slug, // throws an error
-							'year'         => '$matches[1]',
-							'embed'        => 'true',
+							'year'          => '$matches[1]',
+							'embed'         => 'true',
 						) );
 				}
 			}
@@ -572,7 +598,8 @@ if ( ! class_exists( __NAMESPACE__ . '\PostTypeByTaxonomy' ) ) {
 
 				// Create path based on order.
 				// {prefix}/{term}/{custom-post-type} or {prefix}/{custom-post-type}/{term}
-				$path = str_replace( '%post_type%', $post_type_slug, str_replace( '%term%', $term->slug, $this->prefix . implode( '/', $this->order ) ) );
+				$path = str_replace( '%post_type%', $post_type_slug,
+					str_replace( '%term%', $term->slug, $this->prefix . implode( '/', $this->order ) ) );
 
 				// Archive URLs.
 				if ( $post_type_object->has_archive ) {
@@ -605,7 +632,7 @@ if ( ! class_exists( __NAMESPACE__ . '\PostTypeByTaxonomy' ) ) {
 //							$this->taxonomy  => $term->slug, // throws an error
 							'post_type'      => $this->post_type,
 							$this->post_type => '$matches[2]',
-							'page'           => '$matches[2]',
+							'paged'          => '$matches[4]',
 						) );
 
 					// {path}/embed/ Embed URLs.
@@ -616,7 +643,6 @@ if ( ! class_exists( __NAMESPACE__ . '\PostTypeByTaxonomy' ) ) {
 //							$this->taxonomy  => $term->slug, // throws an error
 								'post_type'      => $this->post_type,
 								$this->post_type => '$matches[2]',
-								'page'           => '$matches[2]',
 								'embed'          => 'true',
 							) );
 					}
@@ -628,7 +654,7 @@ if ( ! class_exists( __NAMESPACE__ . '\PostTypeByTaxonomy' ) ) {
 //							$this->taxonomy  => $term->slug, // throws an error
 							'post_type'      => $this->post_type,
 							$this->post_type => '$matches[2]',
-							'page'           => '$matches[2]',
+							'paged'          => '$matches[4]',
 						) );
 
 				}
@@ -656,27 +682,21 @@ if ( ! class_exists( __NAMESPACE__ . '\PostTypeByTaxonomy' ) ) {
 			}
 
 			// Make sure we have what we need!
-			if (
-				! isset( $query->query_vars['name'] ) ||
-				! isset( $query->query_vars['post_type'] ) ||
-				//				! isset( $query->query_vars[ $this->taxonomy ] ) ||
-				$query->query_vars['post_type'] !== $this->post_type
-			) {
+			if ( ! isset( $query->query_vars['name'] ) || ! isset( $query->query_vars['post_type'] ) || //				! isset( $query->query_vars[ $this->taxonomy ] ) ||
+			     $query->query_vars['post_type'] !== $this->post_type ) {
 				return;
 			}
 
 			// Get the Post Object.
-			$post = function_exists( 'wpcom_vip_get_page_by_path' ) ? wpcom_vip_get_page_by_path( $query->query_vars['name'], OBJECT, $query->query_vars['post_type'] ) : get_page_by_path( $query->query_vars['name'], OBJECT, $query->query_vars['post_type'] );
+			$post = function_exists( 'wpcom_vip_get_page_by_path' ) ? wpcom_vip_get_page_by_path( $query->query_vars['name'], OBJECT,
+				$query->query_vars['post_type'] ) : get_page_by_path( $query->query_vars['name'], OBJECT, $query->query_vars['post_type'] );
 
 			// Set the value of the query.
 			global $wp_the_query;
 
 			// For single posts with a taxonomy slug prefix.
-			if (
-				isset( $query->query_vars[ $this->taxonomy ] ) &&
-				is_singular( $this->post_type ) &&
-				! has_term( $query->query_vars[ $this->taxonomy ], $this->taxonomy, $post )
-			) {
+			if ( isset( $query->query_vars[ $this->taxonomy ] ) && is_singular( $this->post_type ) && ! has_term( $query->query_vars[ $this->taxonomy ],
+					$this->taxonomy, $post ) ) {
 				$wp_the_query->set_404();
 				$query->set_404();
 				set_query_var( $this->taxonomy . '-' . $this->post_type, 404 );
@@ -732,21 +752,8 @@ if ( ! class_exists( __NAMESPACE__ . '\PostTypeByTaxonomy' ) ) {
 		protected function has_query_var() {
 			global $wp_query;
 
-			return (
-				parent::has_query_var() ||
-				// parent::has_query_var() && is_singular() ||
-				(
-					is_singular() &&
-					isset( $wp_query->query_vars[ $this->taxonomy ] ) &&
-					isset( $wp_query->query_vars['post_type'] ) &&
-					$this->post_type === $wp_query->query_vars['post_type']
-				) ||
-				(
-					isset( $wp_query->query_vars[ $this->post_type ] ) &&
-					'' !== $wp_query->query_vars[ $this->post_type ]
-				) ||
-				is_post_type_archive( $this->post_type )
-			);
+			return ( parent::has_query_var() || // parent::has_query_var() && is_singular() ||
+			         ( is_singular() && isset( $wp_query->query_vars[ $this->taxonomy ] ) && isset( $wp_query->query_vars['post_type'] ) && $this->post_type === $wp_query->query_vars['post_type'] ) || ( isset( $wp_query->query_vars[ $this->post_type ] ) && '' !== $wp_query->query_vars[ $this->post_type ] ) || is_post_type_archive( $this->post_type ) );
 
 		}
 

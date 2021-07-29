@@ -33,6 +33,13 @@ if ( ! class_exists( __NAMESPACE__ . '\RewriteEndpoint' ) ) {
 	class RewriteEndpoint {
 
 		/**
+		 * Original args
+		 *
+		 * @var array
+		 */
+		protected $args;
+
+		/**
 		 * Endpoint mask describing the places the endpoint should be added.
 		 *
 		 * @var int
@@ -69,16 +76,16 @@ if ( ! class_exists( __NAMESPACE__ . '\RewriteEndpoint' ) ) {
 		 * @param array $args Array of class args.
 		 */
 		public function __construct( $slug, $args = array() ) {
-			$args = $this->get_args( $slug, $args );
-			$args = wp_parse_args( $args, $this->defaults() );
+			$this->args = $this->get_args( $slug, $args );
+			$this->args = wp_parse_args( $this->args, $this->defaults() );
 
-			$this->places   = $this->get_val( 'places', $args );
-			$this->rules    = $this->get_val( 'rules', $args );
-			$this->slug     = $this->get_val( 'slug', $args );
-			$this->slug     = $this->slug ? $this->slug : $this->get_val( 'var', $args );
-			$this->var      = $this->get_val( 'var', $args );
-			$this->template = $this->get_val( 'template', $args );
-			$this->tags     = $this->get_val( 'tags', $args );
+			$this->places   = $this->get_val( 'places', $this->args );
+			$this->rules    = $this->get_val( 'rules', $this->args );
+			$this->slug     = $this->get_val( 'slug', $this->args );
+			$this->slug     = $this->slug ? $this->slug : $this->get_val( 'var', $this->args );
+			$this->var      = $this->get_val( 'var', $this->args );
+			$this->template = $this->get_val( 'template', $this->args );
+			$this->tags     = $this->get_val( 'tags', $this->args );
 
 			// Add Hooks.
 			add_filter( 'query_vars', array( $this, 'query_vars' ) );
