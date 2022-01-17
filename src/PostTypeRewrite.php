@@ -73,19 +73,19 @@ if ( ! class_exists( __NAMESPACE__ . '\PostTypeRewrite' ) ) {
 
 			// Make sure we have what we need!
 			if ( ! isset( $this->args['post_type'] ) ) {
-				throw new \Exception( __( 'post_type are required to be set.', 'wps-rewrite' ) );
+				throw new \Exception( \__( 'post_type are required to be set.', 'wps-rewrite' ) );
 			}
 
 			$this->post_type = $this->args['post_type'];
 			$this->prefix    = isset( $this->args['prefix'] ) ? $this->args['prefix'] : '';
 
 			// Make sure we check the slugs.
-			add_filter( 'wp_unique_post_slug_is_bad_attachment_slug', array( $this, 'wp_unique_post_slug_is_bad_attachment_slug' ), 10, 2 );
-			add_filter( 'wp_unique_post_slug_is_bad_hierarchical_slug', array( $this, 'wp_unique_post_slug_is_bad_hierarchical_slug' ), 10, 4 );
-			add_filter( 'wp_unique_post_slug_is_bad_flat_slug', array( $this, 'wp_unique_post_slug_is_bad_flat_slug' ), 10, 3 );
+			\add_filter( 'wp_unique_post_slug_is_bad_attachment_slug', array( $this, 'wp_unique_post_slug_is_bad_attachment_slug' ), 10, 2 );
+			\add_filter( 'wp_unique_post_slug_is_bad_hierarchical_slug', array( $this, 'wp_unique_post_slug_is_bad_hierarchical_slug' ), 10, 4 );
+			\add_filter( 'wp_unique_post_slug_is_bad_flat_slug', array( $this, 'wp_unique_post_slug_is_bad_flat_slug' ), 10, 3 );
 
 			// Permalink preview.
-			add_filter( 'post_type_link', array( $this, 'post_type_link' ), 10, 2 );
+			\add_filter( 'post_type_link', array( $this, 'post_type_link' ), 10, 2 );
 
 		}
 
@@ -189,7 +189,7 @@ if ( ! class_exists( __NAMESPACE__ . '\PostTypeRewrite' ) ) {
 			}
 
 			// Add the prefix after home URL base.
-			return home_url( $this->prefix . str_replace( trailingslashit( home_url() ), '', $post_link ) );
+			return \home_url( $this->prefix . str_replace( trailingslashit( \home_url() ), '', $post_link ) );
 
 		}
 
@@ -420,7 +420,9 @@ if ( ! class_exists( __NAMESPACE__ . '\PostTypeRewrite' ) ) {
 		 * @return bool
 		 */
 		public function wp_unique_post_slug_is_bad_flat_slug( $needs_suffix, $slug, $post_type ) {
+
 			return $this->wp_unique_post_slug_is_bad_slug( $needs_suffix, $slug, $post_type );
+
 		}
 
 		/**
@@ -436,7 +438,9 @@ if ( ! class_exists( __NAMESPACE__ . '\PostTypeRewrite' ) ) {
 		 * @return bool
 		 */
 		public function wp_unique_post_slug_is_bad_hierarchical_slug( $needs_suffix, $slug, $post_type, $post_parent ) {
+
 			return $this->wp_unique_post_slug_is_bad_slug( $needs_suffix, $slug, $post_type, $post_parent );
+
 		}
 
 		/**
@@ -450,7 +454,9 @@ if ( ! class_exists( __NAMESPACE__ . '\PostTypeRewrite' ) ) {
 		 * @return bool
 		 */
 		public function wp_unique_post_slug_is_bad_attachment_slug( $needs_suffix, $slug ) {
+
 			return $this->wp_unique_post_slug_is_bad_slug( $needs_suffix, $slug, 'attachment' );
+
 		}
 
 		/**
