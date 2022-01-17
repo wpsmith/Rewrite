@@ -26,9 +26,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 if ( ! class_exists( __NAMESPACE__ . '\RewriteEndpoint' ) ) {
 	/**
-	 * Class RewriteEndpoint
+	 * Class RewriteEndpoint.
 	 *
-	 * @package WPS\Rewrite
+	 * @package WPS\WP\Rewrite
 	 */
 	class RewriteEndpoint {
 
@@ -41,33 +41,69 @@ if ( ! class_exists( __NAMESPACE__ . '\RewriteEndpoint' ) ) {
 
 		/**
 		 * Endpoint mask describing the places the endpoint should be added.
+		 *     Accepts a mask of:
+		 *     - `EP_ALL`
+		 *     - `EP_NONE`
+		 *     - `EP_ALL_ARCHIVES`
+		 *     - `EP_ATTACHMENT`
+		 *     - `EP_AUTHORS`
+		 *     - `EP_CATEGORIES`
+		 *     - `EP_COMMENTS`
+		 *     - `EP_DATE`
+		 *     - `EP_DAY`
+		 *     - `EP_MONTH`
+		 *     - `EP_PAGES`
+		 *     - `EP_PERMALINK`
+		 *     - `EP_ROOT`
+		 *     - `EP_SEARCH`
+		 *     - `EP_TAGS`
+		 *     - `EP_YEAR`
 		 *
+		 * See also `add_rewrite_endpoint()`
 		 * @var int
 		 */
 		protected $places;
 
 		/**
+		 * Name of the endpoint.
+		 *
+		 * See also `add_rewrite_endpoint()`
+		 *
 		 * @var string
 		 */
 		protected $slug;
 
 		/**
+		 * Query var.
+		 *
 		 * @var string
 		 */
 		protected $var;
 
 		/**
+		 * Rules being added.
+		 *
 		 * @var array
 		 */
 		protected $rules;
 
 		/**
-		 * Template
+		 * Template to include when query var has been detected.
 		 *
 		 * @var string
 		 */
 		protected $template;
 
+		/**
+		 * Array of new rewrite tags.
+		 *
+		 * Is an array of 'tag' => 'regex'.
+		 * Regular expression to substitute the tag for in rewrite rules.
+		 *
+		 * @see add_rewrite_tags
+		 * @var array
+		 */
+		protected $tags;
 
 		/**
 		 * Rewrite_Endpoint constructor.
@@ -75,7 +111,7 @@ if ( ! class_exists( __NAMESPACE__ . '\RewriteEndpoint' ) ) {
 		 * @param array|string $slug Endpoint slug.
 		 * @param array $args Array of class args.
 		 */
-		public function __construct( $slug, $args = array() ) {
+		public function __construct( $slug, array $args = array() ) {
 			$this->args = $this->get_args( $slug, $args );
 			$this->args = wp_parse_args( $this->args, $this->defaults() );
 
@@ -88,46 +124,45 @@ if ( ! class_exists( __NAMESPACE__ . '\RewriteEndpoint' ) ) {
 			$this->tags     = $this->get_val( 'tags', $this->args );
 
 			// Add Hooks.
-			add_filter( 'query_vars', array( $this, 'query_vars' ) );
+			\add_filter( 'query_vars', array( $this, 'query_vars' ) );
 
 			// Template Include Hook.
 			if ( null !== $this->template ) {
-				add_action( 'template_include', array( $this, 'template_include' ), PHP_INT_MAX );
+				\add_action( 'template_include', array( $this, 'template_include' ), PHP_INT_MAX );
 			}
 
 			if ( null !== $this->tags ) {
-				add_action( 'init', array( $this, 'add_rewrite_tags' ), 10, 0 );
+				\add_action( 'init', array( $this, 'add_rewrite_tags' ), 10, 0 );
 			}
 
 			// Rewrite custom rules.
 			if ( method_exists( $this, 'rewrite_rules' ) ) {
-				add_filter( 'generate_rewrite_rules', array( $this, 'rewrite_rules' ) );
+				\add_filter( 'generate_rewrite_rules', array( $this, 'rewrite_rules' ) );
 			} elseif ( ! empty( $this->rules ) ) {
 				$rules = $this->rules;
-				add_filter( 'generate_rewrite_rules', function ( $wp_rewrite ) use ( $rules ) {
+				\add_filter( 'generate_rewrite_rules', function ( $wp_rewrite ) use ( $rules ) {
 					$wp_rewrite->rules = $rules + $wp_rewrite->rules;
 
 					return $wp_rewrite->rules;
 				} );
 			} else {
-				add_action( 'init', array( $this, 'add_rewrite_endpoint' ) );
+				\add_action( 'init', array( $this, 'add_rewrite_endpoint' ) );
 			}
 
 			if ( method_exists( $this, 'pre_get_posts' ) ) {
-				add_action( 'pre_get_posts', array( $this, 'pre_get_posts' ) );
+				\add_action( 'pre_get_posts', array( $this, 'pre_get_posts' ) );
 			}
-
 		}
 
 		/**
-		 * Gets the value of a key from an array.
+		 * Gets the value of a key from an array if key exists.
 		 *
 		 * @param string $key
 		 * @param array $arr Array to get value if set.
 		 *
 		 * @return null|mixed Value if set or null if no value.
 		 */
-		protected function get_val( $key, $arr ) {
+		protected function get_val( string $key, array $arr ) {
 			if ( isset( $arr[ $key ] ) ) {
 				return $arr[ $key ];
 			}
@@ -143,8 +178,7 @@ if ( ! class_exists( __NAMESPACE__ . '\RewriteEndpoint' ) ) {
 		 *
 		 * @return array
 		 */
-		protected function get_args( $slug, $args ) {
-
+		protected function get_args( $slug, array $args ): array {
 			if ( is_array( $slug ) ) {
 				$args = $slug;
 			} else {
@@ -157,19 +191,16 @@ if ( ! class_exists( __NAMESPACE__ . '\RewriteEndpoint' ) ) {
 			}
 
 			return $args;
-
 		}
 
 		/**
 		 * Adds rewrite tags.
 		 */
 		public function add_rewrite_tags() {
-
 			foreach ( (array) $this->tags as $tag => $regex ) {
 				$tag = '%' . trim( $tag, '%' ) . '%';
 				add_rewrite_tag( $tag, $regex );
 			}
-
 		}
 
 		/**
@@ -177,8 +208,7 @@ if ( ! class_exists( __NAMESPACE__ . '\RewriteEndpoint' ) ) {
 		 *
 		 * @return array Array of defaults.
 		 */
-		public function defaults() {
-
+		public function defaults(): array {
 			return array(
 				'places'   => EP_PERMALINK | EP_PAGES,
 				'rules'    => '',
@@ -186,16 +216,13 @@ if ( ! class_exists( __NAMESPACE__ . '\RewriteEndpoint' ) ) {
 				'template' => '',
 				'var'      => '',
 			);
-
 		}
 
 		/**
 		 * Adds endpoint.
 		 */
 		public function add_rewrite_endpoint() {
-
 			add_rewrite_endpoint( $this->slug, $this->places );
-
 		}
 
 		/**
@@ -203,7 +230,7 @@ if ( ! class_exists( __NAMESPACE__ . '\RewriteEndpoint' ) ) {
 		 *
 		 * @return bool
 		 */
-		protected function has_query_var() {
+		protected function has_query_var(): bool {
 			global $wp_query;
 
 			// Must be a request with our query var and a singular object.
@@ -217,28 +244,25 @@ if ( ! class_exists( __NAMESPACE__ . '\RewriteEndpoint' ) ) {
 		 *
 		 * @return array
 		 */
-		public function query_vars( $vars ) {
-
+		public function query_vars( $vars ): array {
 			if ( isset( $this->var ) ) {
 				$vars[] = $this->var;
 			}
 
 			return $vars;
-
 		}
 
 		/**
 		 * Conditionally includes the template.
 		 *
-		 * @global \WP_Filesystem_Base $wp_filesystem Subclass
-		 *
 		 * @param string $template Template path.
 		 *
 		 * @return mixed|null|string
+		 *
+		 * @global \WP_Filesystem_Base $wp_filesystem Subclass
 		 */
-		public function template_include( $template ) {
-
-			if ( ! $this->has_query_var() || is_admin() ) {
+		public function template_include( string $template ) {
+			if ( ! $this->has_query_var() || \is_admin() ) {
 				return $template;
 			}
 
@@ -246,11 +270,10 @@ if ( ! class_exists( __NAMESPACE__ . '\RewriteEndpoint' ) ) {
 				require_once ABSPATH . 'wp-admin/includes/file.php';
 			}
 
-			WP_Filesystem();
+			\WP_Filesystem();
 			/**
-			 * @var \WP_Filesystem_Base $wp_filesystem
-			 */
-			global $wp_filesystem;
+			 * @var \WP_Filesystem_Base $wp_filesystem Filesystem.
+			 */ global $wp_filesystem;
 
 			// include custom template.
 			if ( $wp_filesystem->is_file( $this->template ) ) {
@@ -258,8 +281,6 @@ if ( ! class_exists( __NAMESPACE__ . '\RewriteEndpoint' ) ) {
 			}
 
 			return $template;
-
 		}
-
 	}
 }

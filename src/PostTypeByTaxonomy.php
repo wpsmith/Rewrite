@@ -28,26 +28,35 @@ if ( ! class_exists( __NAMESPACE__ . '\PostTypeByTaxonomy' ) ) {
 	/**
 	 * Class PostTypeByTaxonomy
 	 *
-	 * @package WPS\Rewrite
+	 * @package WPS\WP\Rewrite
 	 */
-	class PostTypeByTaxonomy extends PostTypeRewrite {
-
+	class PostTypeByTaxonomy extends PostTypeBy {
 		/**
 		 * Taxonomy.
 		 *
 		 * @var string
 		 */
-		protected $taxonomy;
+		protected string $taxonomy;
+
+		/**
+		 * The default order of the slugs.
+		 *
+		 * @var string[]
+		 */
+		protected array $default_order = [
+			'%term%',
+			'%post_type%',
+		];
 
 		/**
 		 * The order of the slugs.
 		 *
-		 * @var []string
+		 * @var string[]
 		 */
-		protected $order = array(
+		protected array $order = [
 			'%term%',
 			'%post_type%',
-		);
+		];
 
 		/**
 		 * RewriteEndpoint constructor.
@@ -59,57 +68,23 @@ if ( ! class_exists( __NAMESPACE__ . '\PostTypeByTaxonomy' ) ) {
 		 *
 		 */
 		public function __construct( $slug, $args = array() ) {
-
 			// Construct.
 			parent::__construct( $slug, $args );
 
 			// Make sure we have what we need!
 			if ( ! isset( $this->args['taxonomy'] ) ) {
-				throw new \Exception( __( 'taxonomy is required to be set.', 'wps-rewrite' ) );
+				throw new \Exception( \__( 'taxonomy is required to be set.', 'wps-rewrite' ) );
 			}
 
 			$this->taxonomy = $this->args['taxonomy'];
 
 			// @todo Determine whether this is really needed. Could be needed because this taxonomy term could be part of another rewrite deal.
-			add_filter( 'wp_unique_term_slug_is_bad_slug', array( $this, 'wp_unique_term_slug_is_bad_slug' ), 10, 3 );
+			\add_filter( 'wp_unique_term_slug_is_bad_slug', array( $this, 'wp_unique_term_slug_is_bad_slug' ), 10, 3 );
 
 			// Flush rewrite whenever a term is created, edited, or deleted within taxonomy.
-			add_filter( "created_$this->taxonomy", 'flush_rewrite_rules' );
-			add_filter( "edited_$this->taxonomy", 'flush_rewrite_rules' );
-			add_filter( "deleted_$this->taxonomy", 'flush_rewrite_rules' );
-
-		}
-
-		/** PUBLIC API */
-
-		/**
-		 * Order for the URL Path.
-		 *
-		 * @param []string $order Order of slugs.
-		 *
-		 * @return []string The order.
-		 */
-		public function set_order( $order ) {
-
-			$the_order = [];
-			$defaults  = [
-				'%term%',
-				'%post_type%',
-			];
-
-			foreach ( $order as $o ) {
-				if ( in_array( $o, $defaults, true ) ) {
-					$the_order[] = $o;
-				}
-			}
-
-			$c = count( $the_order );
-			if ( 2 === $c || 1 === $c ) {
-				$this->order = $the_order;
-			}
-
-			return $this->order;
-
+			\add_filter( "created_$this->taxonomy", 'flush_rewrite_rules' );
+			\add_filter( "edited_$this->taxonomy", 'flush_rewrite_rules' );
+			\add_filter( "deleted_$this->taxonomy", 'flush_rewrite_rules' );
 		}
 
 		/** PRIVATE */
@@ -124,21 +99,24 @@ if ( ! class_exists( __NAMESPACE__ . '\PostTypeByTaxonomy' ) ) {
 		 *
 		 * @return string Post's permalink.
 		 */
-		public function post_type_link( $post_link, $post ) {
+		public function post_type_link( string $post_link, \WP_Post $post ): string {
 			if ( $this->post_type !== $post->post_type ) {
 				return $post_link;
 			}
 
-			$post_type_object = get_post_type_object( $this->post_type );
+			$post_type_object = \get_post_type_object( $this->post_type );
 
 			// Remove the home URL base.
-			$old_path = str_replace( trailingslashit( home_url() ), '/', $post_link );
+			$old_path = str_replace( \trailingslashit( \home_url() ), '/', $post_link );
 
 			// Remove the post type object rewrite
 			$old_path = str_replace( '/' . $post_type_object->rewrite['slug'] . '/', '/', $old_path );
 
 			// Start building the new path.
 			$path = $this->prefix . implode( '/', $this->order );
+
+			// Default term.
+			$term = '';
 
 			// get the primary term.
 			if ( in_array( '%term%', $this->order ) ) {
@@ -151,11 +129,10 @@ if ( ! class_exists( __NAMESPACE__ . '\PostTypeByTaxonomy' ) ) {
 			}
 
 			if ( ! is_wp_error( $term ) && ! empty( $term ) ) {
-
 				$path .= $old_path;
 
 				// Return re-adding home URL base.
-				return home_url( $path );
+				return \home_url( $path );
 			}
 
 			return $post_link;
@@ -173,8 +150,7 @@ if ( ! class_exists( __NAMESPACE__ . '\PostTypeByTaxonomy' ) ) {
 		 *
 		 * @return bool
 		 */
-		public function wp_unique_post_slug_is_bad_slug( $needs_suffix, $slug, $post_type = null, $post_parent = null ) {
-
+		public function wp_unique_post_slug_is_bad_slug( $needs_suffix, $slug, $post_type = null, $post_parent = null ): bool {
 			// Cycle through our terms and make sure this slug doesn't match any.
 			$terms = $this->get_terms();
 			foreach ( $terms as $term ) {
@@ -184,7 +160,6 @@ if ( ! class_exists( __NAMESPACE__ . '\PostTypeByTaxonomy' ) ) {
 			}
 
 			return parent::wp_unique_post_slug_is_bad_slug( $needs_suffix, $slug, $post_type, $post_parent );
-
 		}
 
 		/**
@@ -198,8 +173,7 @@ if ( ! class_exists( __NAMESPACE__ . '\PostTypeByTaxonomy' ) ) {
 		 *
 		 * @return bool
 		 */
-		public function wp_unique_term_slug_is_bad_slug( $needs_suffix, $slug, $term ) {
-
+		public function wp_unique_term_slug_is_bad_slug( $needs_suffix, $slug, $term ): bool {
 			if ( $term->taxonomy === $this->taxonomy ) {
 				// Cycle through our posts and make sure this slug doesn't match any.
 				$posts = get_posts( array( 'post_type' => $this->post_type ) );
@@ -211,7 +185,6 @@ if ( ! class_exists( __NAMESPACE__ . '\PostTypeByTaxonomy' ) ) {
 			}
 
 			return $this->wp_unique_post_slug_is_bad_slug( $needs_suffix, $slug );
-
 		}
 
 		/**
@@ -228,8 +201,7 @@ if ( ! class_exists( __NAMESPACE__ . '\PostTypeByTaxonomy' ) ) {
 		 * @return array|bool|null|\WP_Error|\WP_Term
 		 */
 		protected function get_the_first_term( $post_or_id, $taxonomy = 'category' ) {
-
-			if ( ! $post = get_post( $post_or_id ) ) {
+			if ( ! $post = \get_post( $post_or_id ) ) {
 				return false;
 			}
 
@@ -238,11 +210,11 @@ if ( ! class_exists( __NAMESPACE__ . '\PostTypeByTaxonomy' ) ) {
 			// Use WP SEO Primary Term
 			// from https://github.com/Yoast/wordpress-seo/issues/4038
 			if ( class_exists( 'WPSEO_Primary_Term' ) ) {
-				$term = get_term( ( new \WPSEO_Primary_Term( $taxonomy, $post->ID ) )->get_primary_term(), $taxonomy );
+				$term = \get_term( ( new \WPSEO_Primary_Term( $taxonomy, $post->ID ) )->get_primary_term(), $taxonomy );
 			}
 
 			// Fallback on term with highest post count
-			if ( ! $term || is_wp_error( $term ) ) {
+			if ( ! $term || \is_wp_error( $term ) ) {
 				$terms = get_the_terms( $post->ID, $taxonomy );
 				if ( empty( $terms ) || is_wp_error( $terms ) ) {
 					return false;
@@ -280,7 +252,6 @@ if ( ! class_exists( __NAMESPACE__ . '\PostTypeByTaxonomy' ) ) {
 			}
 
 			return $term;
-
 		}
 
 		/**
@@ -290,12 +261,10 @@ if ( ! class_exists( __NAMESPACE__ . '\PostTypeByTaxonomy' ) ) {
 		 * @return array|int|\WP_Error
 		 */
 		protected function get_terms() {
-
-			return get_terms( array(
+			return \get_terms( [
 				'taxonomy'   => $this->taxonomy,
 				'hide_empty' => false,
-			) );
-
+			] );
 		}
 
 		/**
@@ -308,11 +277,11 @@ if ( ! class_exists( __NAMESPACE__ . '\PostTypeByTaxonomy' ) ) {
 		 *
 		 * @return array Rewrite rules.
 		 */
-		protected function get_term_rewrite_rules( $path, $term ) {
+		protected function get_term_rewrite_rules( $path, $term ): array {
 			$rules = [];
 
 			// {path}/ Archive URL.
-			$rules[ $path . '/?$' ] = 'index.php?' . build_query( array(
+			$rules[ $path . '/?$' ] = 'index.php?' . \build_query( array(
 					'wps-post_type' => $this->post_type,
 					'wps-taxonomy'  => $this->taxonomy,
 					'wps-term'      => $term->slug,
@@ -322,7 +291,7 @@ if ( ! class_exists( __NAMESPACE__ . '\PostTypeByTaxonomy' ) ) {
 
 			// {path}/page/#/ Pagination Archive URLs.
 			if ( $this->rewrites['page'] ) {
-				$rules[ $path . '/page/?([0-9]{1,})/?$' ] = 'index.php?' . build_query( array(
+				$rules[ $path . '/page/?([0-9]{1,})/?$' ] = 'index.php?' . \build_query( array(
 						'wps-post_type' => $this->post_type,
 						'wps-taxonomy'  => $this->taxonomy,
 						'wps-term'      => $term->slug,
@@ -332,9 +301,10 @@ if ( ! class_exists( __NAMESPACE__ . '\PostTypeByTaxonomy' ) ) {
 					) );
 			}
 
+			// {path}/page/#/ Feed Archive URLs.
 			if ( $this->rewrites['feed'] ) {
 				// {path}/feed/rss/ Feed URLs.
-				$rules[ $path . '/feed/(feed|rdf|rss|rss2|atom)/?$' ] = 'index.php?' . build_query( array(
+				$rules[ $path . '/feed/(feed|rdf|rss|rss2|atom)/?$' ] = 'index.php?' . \build_query( array(
 						'wps-post_type' => $this->post_type,
 						'wps-taxonomy'  => $this->taxonomy,
 						'wps-term'      => $term->slug,
@@ -344,7 +314,7 @@ if ( ! class_exists( __NAMESPACE__ . '\PostTypeByTaxonomy' ) ) {
 					) );
 
 				// {path}/rss/ Feed URLs.
-				$rules[ $path . '/(feed|rdf|rss|rss2|atom)/?$' ] = 'index.php?' . build_query( array(
+				$rules[ $path . '/(feed|rdf|rss|rss2|atom)/?$' ] = 'index.php?' . \build_query( array(
 						'wps-post_type' => $this->post_type,
 						'wps-taxonomy'  => $this->taxonomy,
 						'wps-term'      => $term->slug,
@@ -356,7 +326,7 @@ if ( ! class_exists( __NAMESPACE__ . '\PostTypeByTaxonomy' ) ) {
 
 			// {path}/embed/ Embed URL.
 			if ( $this->rewrites['embed'] ) {
-				$rules[ $path . '/embed/?$' ] = 'index.php?' . build_query( array(
+				$rules[ $path . '/embed/?$' ] = 'index.php?' . \build_query( array(
 						$this->taxonomy => $term->slug,
 						'wps-taxonomy'  => $this->taxonomy,
 						'wps-term'      => $term->slug,
@@ -369,7 +339,7 @@ if ( ! class_exists( __NAMESPACE__ . '\PostTypeByTaxonomy' ) ) {
 			// Year, Month, Day Archives.
 			if ( $this->rewrites['date'] ) {
 				// {path}/YYYY/MM/DD/ Archive URLs.
-				$rules[ $path . '/([0-9]{4})/([0-9]{1,2})/([0-9]{1,2})/?$' ] = 'index.php?' . build_query( array(
+				$rules[ $path . '/([0-9]{4})/([0-9]{1,2})/([0-9]{1,2})/?$' ] = 'index.php?' . \build_query( array(
 						'wps-taxonomy'  => $this->taxonomy,
 						'wps-term'      => $term->slug,
 						'wps-post_type' => $this->post_type,
@@ -380,9 +350,9 @@ if ( ! class_exists( __NAMESPACE__ . '\PostTypeByTaxonomy' ) ) {
 						'day'           => '$matches[3]',
 					) );
 
-				// {path}/YYYY/MM/DD/page/#/ Archive URLs.
+				// {path}/YYYY/MM/DD/page/#/ Pagination Archive URLs.
 				if ( $this->rewrites['page'] ) {
-					$rules[ $path . '/([0-9]{4})/([0-9]{1,2})/([0-9]{1,2})/page/?([0-9]{1,})/?$' ] = 'index.php?' . build_query( array(
+					$rules[ $path . '/([0-9]{4})/([0-9]{1,2})/([0-9]{1,2})/page/?([0-9]{1,})/?$' ] = 'index.php?' . \build_query( array(
 							'wps-taxonomy'  => $this->taxonomy,
 							'wps-term'      => $term->slug,
 							'wps-post_type' => $this->post_type,
@@ -395,9 +365,10 @@ if ( ! class_exists( __NAMESPACE__ . '\PostTypeByTaxonomy' ) ) {
 						) );
 				}
 
+				// {path}/YYYY/MM/DD/page/#/ Feed Archive URLs.
 				if ( $this->rewrites['feed'] ) {
 					// {path}/YYYY/MM/DD/feed/rss/ Archive URLs.
-					$rules[ $path . '/([0-9]{4})/([0-9]{1,2})/([0-9]{1,2})/feed/(feed|rdf|rss|rss2|atom)/?$' ] = 'index.php?' . build_query( array(
+					$rules[ $path . '/([0-9]{4})/([0-9]{1,2})/([0-9]{1,2})/feed/(feed|rdf|rss|rss2|atom)/?$' ] = 'index.php?' . \build_query( array(
 							'wps-taxonomy'  => $this->taxonomy,
 							'wps-term'      => $term->slug,
 							'wps-post_type' => $this->post_type,
@@ -410,7 +381,7 @@ if ( ! class_exists( __NAMESPACE__ . '\PostTypeByTaxonomy' ) ) {
 						) );
 
 					// {path}/YYYY/MM/DD/rss/ Archive URLs.
-					$rules[ $path . '/([0-9]{4})/([0-9]{1,2})/([0-9]{1,2})/(feed|rdf|rss|rss2|atom)/?$' ] = 'index.php?' . build_query( array(
+					$rules[ $path . '/([0-9]{4})/([0-9]{1,2})/([0-9]{1,2})/(feed|rdf|rss|rss2|atom)/?$' ] = 'index.php?' . \build_query( array(
 							'wps-taxonomy'  => $this->taxonomy,
 							'wps-term'      => $term->slug,
 							'wps-post_type' => $this->post_type,
@@ -425,7 +396,7 @@ if ( ! class_exists( __NAMESPACE__ . '\PostTypeByTaxonomy' ) ) {
 
 				// {path}/YYYY/MM/DD/embed/ Archive URLs.
 				if ( $this->rewrites['embed'] ) {
-					$rules[ $path . '/([0-9]{4})/([0-9]{1,2})/([0-9]{1,2})/embed/?$' ] = 'index.php?' . build_query( array(
+					$rules[ $path . '/([0-9]{4})/([0-9]{1,2})/([0-9]{1,2})/embed/?$' ] = 'index.php?' . \build_query( array(
 							'wps-taxonomy'  => $this->taxonomy,
 							'wps-term'      => $term->slug,
 							'wps-post_type' => $this->post_type,
@@ -440,7 +411,7 @@ if ( ! class_exists( __NAMESPACE__ . '\PostTypeByTaxonomy' ) ) {
 
 				// Year, Month Archives.
 				// {path}/YYYY/MM/ Archive URLs.
-				$rules[ $path . '/([0-9]{4})/([0-9]{1,2})/?$' ] = 'index.php?' . build_query( array(
+				$rules[ $path . '/([0-9]{4})/([0-9]{1,2})/?$' ] = 'index.php?' . \build_query( array(
 						'wps-taxonomy'  => $this->taxonomy,
 						'wps-term'      => $term->slug,
 						'wps-post_type' => $this->post_type,
@@ -450,9 +421,9 @@ if ( ! class_exists( __NAMESPACE__ . '\PostTypeByTaxonomy' ) ) {
 						'monthnum'      => '$matches[2]',
 					) );
 
-				// {path}/YYYY/MM/page/#/ Archive URLs.
+				// {path}/YYYY/MM/page/#/ Pagination Archive URLs.
 				if ( $this->rewrites['page'] ) {
-					$rules[ $path . '/([0-9]{4})/([0-9]{1,2})/page/?([0-9]{1,})/?$' ] = 'index.php?' . build_query( array(
+					$rules[ $path . '/([0-9]{4})/([0-9]{1,2})/page/?([0-9]{1,})/?$' ] = 'index.php?' . \build_query( array(
 							'wps-taxonomy'  => $this->taxonomy,
 							'wps-term'      => $term->slug,
 							'wps-post_type' => $this->post_type,
@@ -464,9 +435,10 @@ if ( ! class_exists( __NAMESPACE__ . '\PostTypeByTaxonomy' ) ) {
 						) );
 				}
 
+				// {path}/YYYY/MM/DD/page/#/ Feed Archive URLs.
 				if ( $this->rewrites['feed'] ) {
 					// {path}/YYYY/MM/feed/rss/ Archive URLs.
-					$rules[ $path . '/([0-9]{4})/([0-9]{1,2})/feed/(feed|rdf|rss|rss2|atom)/?$' ] = 'index.php?' . build_query( array(
+					$rules[ $path . '/([0-9]{4})/([0-9]{1,2})/feed/(feed|rdf|rss|rss2|atom)/?$' ] = 'index.php?' . \build_query( array(
 							'wps-taxonomy'  => $this->taxonomy,
 							'wps-term'      => $term->slug,
 							'wps-post_type' => $this->post_type,
@@ -478,7 +450,7 @@ if ( ! class_exists( __NAMESPACE__ . '\PostTypeByTaxonomy' ) ) {
 						) );
 
 					// {path}/YYYY/MM/rss/ Archive URLs.
-					$rules[ $path . '/([0-9]{4})/([0-9]{1,2})/(feed|rdf|rss|rss2|atom)/?$' ] = 'index.php?' . build_query( array(
+					$rules[ $path . '/([0-9]{4})/([0-9]{1,2})/(feed|rdf|rss|rss2|atom)/?$' ] = 'index.php?' . \build_query( array(
 							'wps-taxonomy'  => $this->taxonomy,
 							'wps-term'      => $term->slug,
 							'wps-post_type' => $this->post_type,
@@ -492,7 +464,7 @@ if ( ! class_exists( __NAMESPACE__ . '\PostTypeByTaxonomy' ) ) {
 
 				// {path}/YYYY/MM/embed/ Archive URLs.
 				if ( $this->rewrites['embed'] ) {
-					$rules[ $path . '/([0-9]{4})/([0-9]{1,2})/embed/?$' ] = 'index.php?' . build_query( array(
+					$rules[ $path . '/([0-9]{4})/([0-9]{1,2})/embed/?$' ] = 'index.php?' . \build_query( array(
 							'wps-taxonomy'  => $this->taxonomy,
 							'wps-term'      => $term->slug,
 							'wps-post_type' => $this->post_type,
@@ -506,7 +478,7 @@ if ( ! class_exists( __NAMESPACE__ . '\PostTypeByTaxonomy' ) ) {
 
 				// Year Archives.
 				// {path}/YYYY/ Archive URLs.
-				$rules[ $path . '/([0-9]{4})/?$' ] = 'index.php?' . build_query( array(
+				$rules[ $path . '/([0-9]{4})/?$' ] = 'index.php?' . \build_query( array(
 						'wps-taxonomy'  => $this->taxonomy,
 						'wps-term'      => $term->slug,
 						'wps-post_type' => $this->post_type,
@@ -515,9 +487,9 @@ if ( ! class_exists( __NAMESPACE__ . '\PostTypeByTaxonomy' ) ) {
 						'year'          => '$matches[1]',
 					) );
 
-				// {path}/YYYY/page/#/ Archive URLs.
+				// {path}/YYYY/page/#/ Pagination Archive URLs.
 				if ( $this->rewrites['page'] ) {
-					$rules[ $path . '/([0-9]{4})/page/?([0-9]{1,})/?$' ] = 'index.php?' . build_query( array(
+					$rules[ $path . '/([0-9]{4})/page/?([0-9]{1,})/?$' ] = 'index.php?' . \build_query( array(
 							'wps-taxonomy'  => $this->taxonomy,
 							'wps-term'      => $term->slug,
 							'wps-post_type' => $this->post_type,
@@ -528,9 +500,10 @@ if ( ! class_exists( __NAMESPACE__ . '\PostTypeByTaxonomy' ) ) {
 						) );
 				}
 
+				// {path}/YYYY/MM/DD/page/#/ Feed Archive URLs.
 				if ( $this->rewrites['feed'] ) {
 					// {path}/YYYY/feed/rss/ Archive URLs.
-					$rules[ $path . '/([0-9]{4})/feed/(feed|rdf|rss|rss2|atom)/?$' ] = 'index.php?' . build_query( array(
+					$rules[ $path . '/([0-9]{4})/feed/(feed|rdf|rss|rss2|atom)/?$' ] = 'index.php?' . \build_query( array(
 							'wps-taxonomy'  => $this->taxonomy,
 							'wps-term'      => $term->slug,
 							'wps-post_type' => $this->post_type,
@@ -541,7 +514,7 @@ if ( ! class_exists( __NAMESPACE__ . '\PostTypeByTaxonomy' ) ) {
 						) );
 
 					// {path}/YYYY/rss/ Archive URLs.
-					$rules[ $path . '/([0-9]{4})/([0-9]{1,2})/(feed|rdf|rss|rss2|atom)/?$' ] = 'index.php?' . build_query( array(
+					$rules[ $path . '/([0-9]{4})/([0-9]{1,2})/(feed|rdf|rss|rss2|atom)/?$' ] = 'index.php?' . \build_query( array(
 							'wps-taxonomy'  => $this->taxonomy,
 							'wps-term'      => $term->slug,
 							'wps-post_type' => $this->post_type,
@@ -554,7 +527,7 @@ if ( ! class_exists( __NAMESPACE__ . '\PostTypeByTaxonomy' ) ) {
 
 				// {path}/YYYY/embed/ Archive URLs.
 				if ( $this->rewrites['embed'] ) {
-					$rules[ $path . '/([0-9]{4})/embed/?$' ] = 'index.php?' . build_query( array(
+					$rules[ $path . '/([0-9]{4})/embed/?$' ] = 'index.php?' . \build_query( array(
 							'wps-taxonomy'  => $this->taxonomy,
 							'wps-term'      => $term->slug,
 							'wps-post_type' => $this->post_type,
@@ -578,10 +551,9 @@ if ( ! class_exists( __NAMESPACE__ . '\PostTypeByTaxonomy' ) ) {
 		 *
 		 * @return array
 		 */
-		public function rewrite_rules( $wp_rewrite ) {
-
+		public function rewrite_rules( $wp_rewrite ): array {
 			// Get post type slug.
-			$post_type_object = get_post_type_object( $this->post_type );
+			$post_type_object = \get_post_type_object( $this->post_type );
 			$post_type_slug   = isset( $post_type_object->rewrite['slug'] ) ? $post_type_object->rewrite['slug'] : $this->post_type;
 
 			$rules = [];
@@ -595,7 +567,6 @@ if ( ! class_exists( __NAMESPACE__ . '\PostTypeByTaxonomy' ) ) {
 
 			// Cycle through our terms.
 			foreach ( $this->get_terms() as $term ) {
-
 				// Create path based on order.
 				// {prefix}/{term}/{custom-post-type} or {prefix}/{custom-post-type}/{term}
 				$path = str_replace( '%post_type%', $post_type_slug,
@@ -604,17 +575,26 @@ if ( ! class_exists( __NAMESPACE__ . '\PostTypeByTaxonomy' ) ) {
 				// Archive URLs.
 				if ( $post_type_object->has_archive ) {
 
-					$rules = array_merge( $rules, $this->get_term_rewrite_rules( $path, $term ) );
-					$rules = array_merge( $rules, $this->get_term_rewrite_rules( $this->prefix . $term->slug, $term ) );
+					$archive_path = str_replace( $post_type_slug, $post_type_archive_slug, $path );
+					$rules = array_merge( $rules, $this->get_term_rewrite_rules( $archive_path, $term ) );
+//					$rules = array_merge( $rules, $this->get_term_rewrite_rules( $this->prefix . $term->slug, $term ) );
 
 				}
 
 				// Singular URLs.
 				if ( $post_type_object->public ) {
-
 					// {path}/embed/ Embed URLs.
 					if ( $this->rewrites['embed'] ) {
-						$rules[ $path . '([^/]+)?(.?.+?)/embed/?$' ] = 'index.php?' . build_query( array(
+//						$rules[ $path . '([^/]+)?(.?.+?)/embed/?$' ] = 'index.php?' . \build_query( array(
+//								'wps-taxonomy'   => $this->taxonomy,
+//								'wps-term'       => $term->slug,
+////							$this->taxonomy  => $term->slug, // throws an error
+//								'post_type'      => $this->post_type,
+//								$this->post_type => '$matches[2]',
+//								'page'           => '$matches[2]',
+//								'embed'          => 'true',
+//							) );
+						$rules[ $path . '[^/]+?(.?.+?)/embed/?$' ] = 'index.php?' . \build_query( array(
 								'wps-taxonomy'   => $this->taxonomy,
 								'wps-term'       => $term->slug,
 //							$this->taxonomy  => $term->slug, // throws an error
@@ -626,39 +606,39 @@ if ( ! class_exists( __NAMESPACE__ . '\PostTypeByTaxonomy' ) ) {
 					}
 
 					// {prefix}/{term}/{custom-post-type}/{postname} URLs.
-					$rules[ $path . '([^/]+)?(.?.+?)(?:/([0-9]+))?/?$' ] = 'index.php?' . build_query( array(
+					$rules[ $path . '([^/]+)?(.?.+?)(?:/([0-9]+))?/?$' ] = 'index.php?' . \build_query( array(
 							'wps-taxonomy'   => $this->taxonomy,
 							'wps-term'       => $term->slug,
 //							$this->taxonomy  => $term->slug, // throws an error
 							'post_type'      => $this->post_type,
 							$this->post_type => '$matches[2]',
-							'paged'          => '$matches[4]',
+							'page'           => '$matches[4]',
 						) );
 
 					// {path}/embed/ Embed URLs.
 					if ( $this->rewrites['embed'] ) {
-						$rules[ $this->prefix . $term->slug . '([^/]+)?(.?.+?)/embed/?$' ] = 'index.php?' . build_query( array(
+						$rules[ $this->prefix . $term->slug . '([^/]+)?(.?.+?)/embed/?$' ] = 'index.php?' . \build_query( array(
 								'wps-taxonomy'   => $this->taxonomy,
 								'wps-term'       => $term->slug,
 //							$this->taxonomy  => $term->slug, // throws an error
 								'post_type'      => $this->post_type,
 								$this->post_type => '$matches[2]',
+								'page'           => '$matches[2]',
 								'embed'          => 'true',
 							) );
 					}
 
 					// {prefix}/{term}/{postname} URLs.
-					$rules[ $this->prefix . $term->slug . '([^/]+)?(.?.+?)(?:/([0-9]+))?/?$' ] = 'index.php?' . build_query( array(
+					$rules[ $this->prefix . $term->slug . '([^/]+)?(.?.+?)(?:/([0-9]+))?/?$' ] = 'index.php?' . \build_query( array(
 							'wps-taxonomy'   => $this->taxonomy,
 							'wps-term'       => $term->slug,
 //							$this->taxonomy  => $term->slug, // throws an error
 							'post_type'      => $this->post_type,
 							$this->post_type => '$matches[2]',
-							'paged'          => '$matches[4]',
+							'page'           => '$matches[4]',
 						) );
 
 				}
-
 			}
 
 			// Add rules to top; first match wins!
@@ -674,8 +654,7 @@ if ( ! class_exists( __NAMESPACE__ . '\PostTypeByTaxonomy' ) ) {
 		 *
 		 * @param \WP_Query $query Current Query.
 		 */
-		public function pre_get_posts( $query ) {
-
+		public function pre_get_posts( \WP_Query $query ) {
 			// Make sure we are only dealing with our rewrites.
 			if ( ! $this->has_query_var() || ! $query->is_main_query() ) {
 				return;
@@ -688,31 +667,31 @@ if ( ! class_exists( __NAMESPACE__ . '\PostTypeByTaxonomy' ) ) {
 			}
 
 			// Get the Post Object.
-			$post = function_exists( 'wpcom_vip_get_page_by_path' ) ? wpcom_vip_get_page_by_path( $query->query_vars['name'], OBJECT,
-				$query->query_vars['post_type'] ) : get_page_by_path( $query->query_vars['name'], OBJECT, $query->query_vars['post_type'] );
+			$post = function_exists( 'wpcom_vip_get_page_by_path' ) ? \wpcom_vip_get_page_by_path( $query->query_vars['name'], OBJECT,
+				$query->query_vars['post_type'] ) : \get_page_by_path( $query->query_vars['name'], OBJECT, $query->query_vars['post_type'] );
 
 			// Set the value of the query.
 			global $wp_the_query;
 
 			// For single posts with a taxonomy slug prefix.
-			if ( isset( $query->query_vars[ $this->taxonomy ] ) && is_singular( $this->post_type ) && ! has_term( $query->query_vars[ $this->taxonomy ],
+			if ( isset( $query->query_vars[ $this->taxonomy ] ) && \is_singular( $this->post_type ) && ! \has_term( $query->query_vars[ $this->taxonomy ],
 					$this->taxonomy, $post ) ) {
 				$wp_the_query->set_404();
 				$query->set_404();
-				set_query_var( $this->taxonomy . '-' . $this->post_type, 404 );
+				\set_query_var( $this->taxonomy . '-' . $this->post_type, 404 );
 
 				// For anonymous functions.
 				$self = $this;
 
 				// Make sure everything bugs out!
-				add_filter( 'redirect_canonical', function ( $redirect_url ) use ( $self ) {
+				\add_filter( 'redirect_canonical', function ( $redirect_url ) use ( $self ) {
 					if ( 404 === get_query_var( $self->taxonomy . '-' . $self->post_type ) ) {
 						return null;
 					}
 
 					return $redirect_url;
 				} );
-				add_filter( 'old_slug_redirect_url', function ( $link ) use ( $self ) {
+				\add_filter( 'old_slug_redirect_url', function ( $link ) use ( $self ) {
 					if ( 404 === get_query_var( $self->taxonomy . '-' . $self->post_type ) ) {
 						return null;
 					}
@@ -734,28 +713,38 @@ if ( ! class_exists( __NAMESPACE__ . '\PostTypeByTaxonomy' ) ) {
 		 * @access private
 		 * @return array Array of defaults.
 		 */
-		public function defaults() {
-
+		public function defaults(): array {
 			$defaults             = parent::defaults();
 			$defaults['taxonomy'] = '';
 
 			return $defaults;
-
 		}
 
 		/**
-		 * Whether the current query has this's query var.
+		 * Whether the current query has $this's query var.
 		 *
 		 * @access private
 		 * @return bool
 		 */
-		protected function has_query_var() {
+		protected function has_query_var(): bool {
 			global $wp_query;
 
-			return ( parent::has_query_var() || // parent::has_query_var() && is_singular() ||
-			         ( is_singular() && isset( $wp_query->query_vars[ $this->taxonomy ] ) && isset( $wp_query->query_vars['post_type'] ) && $this->post_type === $wp_query->query_vars['post_type'] ) || ( isset( $wp_query->query_vars[ $this->post_type ] ) && '' !== $wp_query->query_vars[ $this->post_type ] ) || is_post_type_archive( $this->post_type ) );
-
+			// @formatter:off
+			return (
+				parent::has_query_var() || // parent::has_query_var() && is_singular() ||
+				(
+					\is_singular() &&
+					isset( $wp_query->query_vars[ $this->taxonomy ] ) &&
+					isset( $wp_query->query_vars['post_type'] ) &&
+					$this->post_type === $wp_query->query_vars['post_type']
+				) ||
+				(
+					isset( $wp_query->query_vars[ $this->post_type ] ) &&
+					'' !== $wp_query->query_vars[ $this->post_type ]
+				) ||
+				\is_post_type_archive( $this->post_type )
+			);
+			// @formatter:on
 		}
-
 	}
 }
