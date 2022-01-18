@@ -44,7 +44,7 @@ if ( ! class_exists( __NAMESPACE__ . '\PostTypeByPostMetaKey' ) ) {
 		 *
 		 * @var string[]
 		 */
-		protected array $default_order = [
+		protected array $allowed_order_tokens = [
 			'%meta_key%',
 			'%post_type%',
 		];
