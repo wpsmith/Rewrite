@@ -101,6 +101,8 @@ if ( ! class_exists( __NAMESPACE__ . '\PostTypeByTaxonomy' ) ) {
 			\add_filter( "deleted_$this->taxonomy", 'flush_rewrite_rules' );
 		}
 
+		/** PUBLIC */
+
 		/**
 		 * Adds singular rewrites.
 		 */
@@ -128,10 +130,6 @@ if ( ! class_exists( __NAMESPACE__ . '\PostTypeByTaxonomy' ) ) {
 		public function remove_archive_rewrites(): void {
 			$this->add_archive_rewrites = false;
 		}
-
-		/** PUBLIC */
-
-
 
 		/** PRIVATE */
 
