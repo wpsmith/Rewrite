@@ -59,6 +59,20 @@ if ( ! class_exists( __NAMESPACE__ . '\PostTypeByTaxonomy' ) ) {
 		];
 
 		/**
+		 * Whether to add singular rewrites.
+		 *
+		 * @var bool
+		 */
+		protected bool $add_singular_rewrites = true;
+
+		/**
+		 * Whether to add archive rewrites.
+		 *
+		 * @var bool
+		 */
+		protected bool $add_archive_rewrites = true;
+
+		/**
 		 * RewriteEndpoint constructor.
 		 *
 		 * @param array|string $slug Endpoint slug.
@@ -87,6 +101,38 @@ if ( ! class_exists( __NAMESPACE__ . '\PostTypeByTaxonomy' ) ) {
 			\add_filter( "deleted_$this->taxonomy", 'flush_rewrite_rules' );
 		}
 
+		/**
+		 * Adds singular rewrites.
+		 */
+		public function add_singular_rewrites(): void {
+			$this->add_singular_rewrites = true;
+		}
+
+		/**
+		 * Removes singular rewrites.
+		 */
+		public function remove_singular_rewrites(): void {
+			$this->add_singular_rewrites = false;
+		}
+
+		/**
+		 * Adds archive rewrites.
+		 */
+		public function add_archive_rewrites(): void {
+			$this->add_archive_rewrites = true;
+		}
+
+		/**
+		 * Removes archive rewrites.
+		 */
+		public function remove_archive_rewrites(): void {
+			$this->add_archive_rewrites = false;
+		}
+
+		/** PUBLIC */
+
+
+
 		/** PRIVATE */
 
 		/**
@@ -100,7 +146,7 @@ if ( ! class_exists( __NAMESPACE__ . '\PostTypeByTaxonomy' ) ) {
 		 * @return string Post's permalink.
 		 */
 		public function post_type_link( string $post_link, \WP_Post $post ): string {
-			if ( $this->post_type !== $post->post_type ) {
+			if ( $this->post_type !== $post->post_type || ! $this->add_singular_rewrites ) {
 				return $post_link;
 			}
 
@@ -151,6 +197,11 @@ if ( ! class_exists( __NAMESPACE__ . '\PostTypeByTaxonomy' ) ) {
 		 * @return bool
 		 */
 		public function wp_unique_post_slug_is_bad_slug( $needs_suffix, $slug, $post_type = null, $post_parent = null ): bool {
+			// Don't do anything if singular rules are not added.
+			if ( ! $this->add_singular_rewrites ) {
+				return $needs_suffix;
+			}
+
 			// Cycle through our terms and make sure this slug doesn't match any.
 			$terms = $this->get_terms();
 			foreach ( $terms as $term ) {
@@ -174,6 +225,11 @@ if ( ! class_exists( __NAMESPACE__ . '\PostTypeByTaxonomy' ) ) {
 		 * @return bool
 		 */
 		public function wp_unique_term_slug_is_bad_slug( $needs_suffix, $slug, $term ): bool {
+			// Don't do anything if archive rules are not added.
+			if ( ! $this->add_archive_rewrites ) {
+				return $needs_suffix;
+			}
+
 			if ( $term->taxonomy === $this->taxonomy ) {
 				// Cycle through our posts and make sure this slug doesn't match any.
 				$posts = get_posts( array( 'post_type' => $this->post_type ) );
@@ -559,7 +615,7 @@ if ( ! class_exists( __NAMESPACE__ . '\PostTypeByTaxonomy' ) ) {
 			$rules = [];
 
 			// Add the custom post type archive rules.
-			if ( $post_type_object->has_archive ) {
+			if ( $post_type_object->has_archive && $this->add_archive_rewrites ) {
 				$post_type_archive_slug = isset( $post_type_object->has_archive ) && is_string( $post_type_object->has_archive ) && '' !== $post_type_object->has_archive ? $post_type_object->has_archive : $post_type_slug;
 
 				$rules = $this->get_cpt_rewrite_rules( $this->prefix . $post_type_archive_slug );
@@ -573,7 +629,7 @@ if ( ! class_exists( __NAMESPACE__ . '\PostTypeByTaxonomy' ) ) {
 					str_replace( '%term%', $term->slug, $this->prefix . implode( '/', $this->order ) ) );
 
 				// Archive URLs.
-				if ( $post_type_object->has_archive ) {
+				if ( $post_type_object->has_archive && $this->add_archive_rewrites ) {
 
 					$archive_path = str_replace( $post_type_slug, $post_type_archive_slug, $path );
 					$rules = array_merge( $rules, $this->get_term_rewrite_rules( $archive_path, $term ) );
@@ -582,7 +638,7 @@ if ( ! class_exists( __NAMESPACE__ . '\PostTypeByTaxonomy' ) ) {
 				}
 
 				// Singular URLs.
-				if ( $post_type_object->public ) {
+				if ( $post_type_object->public && $this->add_singular_rewrites ) {
 					// {path}/embed/ Embed URLs.
 					if ( $this->rewrites['embed'] ) {
 //						$rules[ $path . '([^/]+)?(.?.+?)/embed/?$' ] = 'index.php?' . \build_query( array(
