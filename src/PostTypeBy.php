@@ -36,7 +36,7 @@ if ( ! class_exists( __NAMESPACE__ . '\PostTypeBy' ) ) {
 		 *
 		 * @var string[]
 		 */
-		protected array $default_order = [
+		protected array $allowed_order_tokens = [
 			'%post_type%',
 		];
 
@@ -54,7 +54,7 @@ if ( ! class_exists( __NAMESPACE__ . '\PostTypeBy' ) ) {
 		/**
 		 * Order for the URL Path.
 		 *
-		 * @param array $order Order of slugs.
+		 * @param string[] $order Order of slugs.
 		 *
 		 * @return array The order.
 		 */
@@ -62,13 +62,12 @@ if ( ! class_exists( __NAMESPACE__ . '\PostTypeBy' ) ) {
 			$the_order = [];
 
 			foreach ( $order as $o ) {
-				if ( in_array( $o, $this->default_order, true ) ) {
+				if ( in_array( $o, $this->allowed_order_tokens, true ) ) {
 					$the_order[] = $o;
 				}
 			}
 
-			$c = count( $the_order );
-			if ( 2 === $c || 1 === $c ) {
+			if ( count( $this->allowed_order_tokens ) >= count( $the_order ) ) {
 				$this->order = $the_order;
 			}
 
