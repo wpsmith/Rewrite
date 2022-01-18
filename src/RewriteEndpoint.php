@@ -158,7 +158,7 @@ if ( ! class_exists( __NAMESPACE__ . '\RewriteEndpoint' ) ) {
 		 * Gets the value of a key from an array if key exists.
 		 *
 		 * @param string $key
-		 * @param array $arr Array to get value if set.
+		 * @param array $arr Associative array to get value if set.
 		 *
 		 * @return null|mixed Value if set or null if no value.
 		 */
@@ -174,7 +174,7 @@ if ( ! class_exists( __NAMESPACE__ . '\RewriteEndpoint' ) ) {
 		 * Gets the args from the constructor.
 		 *
 		 * @param array|string $slug Endpoint slug.
-		 * @param array $args Array of class args.
+		 * @param array $args Associative array of class args.
 		 *
 		 * @return array
 		 */
