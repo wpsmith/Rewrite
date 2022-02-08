@@ -506,7 +506,7 @@ if ( ! class_exists( __NAMESPACE__ . '\PostTypeByPostMetaKey' ) ) {
 		 *
 		 */
 		public function pre_get_posts( \WP_Query $query ) {
-			if ( ! $this->has_query_var() || ! $query->is_main_query() ) {
+			if ( $this->is_not_this_main_query( $query ) ) {
 				return;
 			}
 
