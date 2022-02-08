@@ -165,6 +165,20 @@ if ( ! class_exists( __NAMESPACE__ . '\PostTypeRewrite' ) ) {
 			$this->rewrites['feed'] = false;
 		}
 
+		/**
+		 * Adds page rewrite rules.
+		 */
+		public function add_page_rewrites() {
+			$this->rewrites['page'] = true;
+		}
+
+		/**
+		 * Ensures that page rewrite rules are not added.
+		 */
+		public function remove_page_rewrites() {
+			$this->rewrites['page'] = false;
+		}
+
 		/** PRIVATE */
 
 		/**
@@ -495,6 +509,11 @@ if ( ! class_exists( __NAMESPACE__ . '\PostTypeRewrite' ) ) {
 			return $wp_rewrite->rules;
 		}
 
+		protected function get_post_from_query( \WP_Query $query ) {
+			return function_exists( 'wpcom_vip_get_page_by_path' ) ? \wpcom_vip_get_page_by_path( $query->query_vars['name'], OBJECT,
+				$query->query_vars['post_type'] ) : \get_page_by_path( $query->query_vars['name'], OBJECT, $query->query_vars['post_type'] );
+		}
+
 		/**
 		 * Adjusts WP_Query as necessary.
 		 *
@@ -504,7 +523,7 @@ if ( ! class_exists( __NAMESPACE__ . '\PostTypeRewrite' ) ) {
 		 */
 		public function pre_get_posts( \WP_Query $query ) {
 			// Make sure we are only dealing with our rewrites.
-			if ( ! $this->has_query_var() || ! $query->is_main_query() ) {
+			if ( $this->is_not_this_main_query( $query ) ) {
 				return;
 			}
 
@@ -514,8 +533,7 @@ if ( ! class_exists( __NAMESPACE__ . '\PostTypeRewrite' ) ) {
 			}
 
 			// Get the Post Object.
-			$post = function_exists( 'wpcom_vip_get_page_by_path' ) ? \wpcom_vip_get_page_by_path( $query->query_vars['name'], OBJECT,
-				$query->query_vars['post_type'] ) : \get_page_by_path( $query->query_vars['name'], OBJECT, $query->query_vars['post_type'] );
+			$post = $this->get_post_from_query( $query );
 
 			// Set the value of the query.
 			global $wp_the_query;
