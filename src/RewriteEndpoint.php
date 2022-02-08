@@ -154,6 +154,21 @@ if ( ! class_exists( __NAMESPACE__ . '\RewriteEndpoint' ) ) {
 			}
 		}
 
+		/** PUBLIC API */
+
+		/**
+		 * Whether the query is not the main query OR does not have our query var.
+		 *
+		 * @param \WP_Query $query The query object.
+		 *
+		 * @return bool
+		 */
+		public function is_not_this_main_query( \WP_Query $query ): bool {
+			return ( ! $this->has_query_var() || ! $query->is_main_query() );
+		}
+
+		/** PRIVATE API */
+
 		/**
 		 * Gets the value of a key from an array if key exists.
 		 *
