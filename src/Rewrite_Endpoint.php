@@ -89,7 +89,7 @@ if ( ! class_exists( __NAMESPACE__ . '\Rewrite_Endpoint' ) ) {
 		 * @param \WP_Query $query Current Query.
 		 */
 		public function pre_get_posts( $query ) {
-			if ( ! $this->has_query_var() || ! $query->is_main_query() ) {
+			if ( $this->is_not_this_main_query( $query ) ) {
 				return;
 			}
 
